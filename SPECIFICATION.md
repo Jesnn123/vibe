@@ -181,7 +181,7 @@ example.com:8080
 # Invalid identifiers (would be treated as strings)
 2servers    # starts with digit
 server.host # contains dot (would be unquoted string)
-配置        # Unicode (would be treated as string)
+配置        # Unicode not allowed in identifiers
 ```
 
 ## Data Types
@@ -270,7 +270,7 @@ Strings come in two forms: quoted and unquoted.
 - Cannot start with a digit if the entire value looks like a number
 - Cannot be `true` or `false` (would be interpreted as boolean)
 - Stops at first whitespace or special character
-- Unicode characters require quotes
+- Unicode characters require quoted strings
 
 **Examples**:
 ```
@@ -279,10 +279,10 @@ path /usr/local/bin
 protocol https
 port_name 8080  # String, not number, because of underscore
 
-# Unicode values must be quoted
-语言 "中文"
-протокол "сервер"
-ポート "データベース"
+# Unicode values must be quoted (ASCII identifiers only)
+language "中文"
+protocol "сервер"
+port "データベース"
 ```
 
 #### Quoted Strings
@@ -352,10 +352,10 @@ Quoted strings support the following escape sequences:
 ### Unicode Support
 
 - Files must be valid UTF-8
-- Unicode characters can appear directly in quoted strings
+- Unicode characters can appear directly in quoted strings and comments only
 - `\uXXXX` escape sequences support Basic Multilingual Plane
 - No support for surrogate pairs or `\UXXXXXXXX` sequences
-- Identifiers and unquoted strings are ASCII-only for simplicity
+- **Identifiers and unquoted strings are strictly ASCII-only** for simplicity and performance
 
 **Examples**:
 ```
@@ -365,12 +365,12 @@ escaped "She said \"Hello\""
 unicode "Emoji: \u1F44D"
 multiline "Line 1\nLine 2\nLine 3"
 
-# Unicode identifiers with ASCII and quoted Unicode values
-configuración "aplicación"  # Unicode identifier, quoted Unicode value
-настройки "сервер"
-設定 "データベース"
+# ASCII identifiers with Unicode quoted values
+configuration "aplicación"  # ASCII identifier, quoted Unicode value
+settings "сервер"
+config "データベース"
 language english     # ASCII identifier and unquoted ASCII value
-idioma "español"     # Unicode identifier, quoted Unicode value
+language "español"   # ASCII identifier, quoted Unicode value
 ```
 
 ### String Parsing Rules
@@ -647,10 +647,10 @@ for loop_config
 class object_type
 vibe excellent  # meta!
 
-# Unicode names must be quoted
-chinese_config "配置"
-russian_server "сервер"
-spanish_config "configuración"
+# Unicode content must be in quoted strings
+chinese_name "配置"
+russian_name "сервер"
+spanish_name "configuración"
 ```
 
 This design choice prioritizes flexibility and eliminates the need to escape or quote common configuration key names. Because reserving words is just not the vibe.
