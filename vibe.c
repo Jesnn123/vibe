@@ -327,39 +327,35 @@ static Token next_token(VibeParser* parser) {
             c = parser->input[parser->pos];
         }
         
-        /* Collect characters for identifier/string/number */
+        /* Collect all valid unquoted string characters */
         while (parser->pos < parser->length) {
             c = parser->input[parser->pos];
-            
-            /* For potential identifiers, use strict identifier rules */
-            if (is_identifier_start(start[0])) {
-                if (is_identifier_char(c)) {
-                    parser->pos++;
-                    parser->column++;
-                } else {
-                    break;
-                }
+            if (is_unquoted_string_char(c)) {
+                parser->pos++;
+                parser->column++;
             } else {
-                /* For other tokens (numbers, strings), use unquoted string rules */
-                if (is_unquoted_string_char(c)) {
-                    parser->pos++;
-                    parser->column++;
-                } else {
-                    break;
-                }
+                break;
             }
         }
         
         const char* end = parser->input + parser->pos;
         token.value = strdup_range(start, end);
         
-        /* Determine token type */
+        /* Determine token type based on content */
         if (strcmp(token.value, "true") == 0 || strcmp(token.value, "false") == 0) {
             token.type = TOKEN_BOOLEAN;
         } else if (is_valid_number(token.value)) {
             token.type = TOKEN_NUMBER;
         } else if (is_identifier_start(token.value[0])) {
-            token.type = TOKEN_IDENTIFIER;
+            /* Check if it's a valid identifier (only contains identifier chars) */
+            bool is_valid_identifier = true;
+            for (const char* p = token.value; *p; p++) {
+                if (!is_identifier_char(*p)) {
+                    is_valid_identifier = false;
+                    break;
+                }
+            }
+            token.type = is_valid_identifier ? TOKEN_IDENTIFIER : TOKEN_STRING;
         } else {
             token.type = TOKEN_STRING;
         }
