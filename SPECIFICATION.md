@@ -34,36 +34,37 @@
 
 ## Overview
 
-VIBE (Values In Bracket Expression) is a hierarchical configuration file format designed for human readability and fast machine parsing. It combines the visual clarity of structured formats with the simplicity of minimal syntax, making it ideal for configuration files, data serialization, and human-editable structured data.
+VIBE (Values In Bracket Expression) is a hierarchical configuration file format designed to optimize both human readability and machine parsing performance. It combines the visual clarity of bracket-delimited structures with minimal syntax overhead, making it ideal for configuration files, data serialization, and human-editable structured data.
 
-Like its namesake, VIBE aims to create good vibes in your development workflow by eliminating the frustration of complex configuration formats. No more YAML indentation nightmares or JSON comma catastrophes - just smooth, readable config that flows naturally.
+VIBE addresses common pain points in existing configuration formats: it eliminates YAML's indentation sensitivity, removes JSON's syntactic overhead (trailing commas, excessive quotes), and provides clearer visual hierarchy than INI files while maintaining simplicity.
 
-VIBE is designed to be:
-- **Readable**: Structure is immediately apparent from visual inspection (good vibes at first sight)
-- **Writable**: Easy to create and modify by hand (maintains the creative flow)
-- **Parseable**: Single-pass parsing with deterministic grammar (keeps the parsing vibe chill)
-- **Unambiguous**: Only one correct way to represent any data structure (no mixed signals)
-- **Efficient**: Minimal memory overhead and fast parsing (performance vibes only)
+### Core Principles
+
+- **Readable**: Structure is immediately apparent through visual inspection, with clear delimiters and minimal noise
+- **Writable**: Simple syntax rules make hand-editing natural and error-resistant
+- **Parseable**: Deterministic LL(1) grammar enables single-pass parsing with O(n) complexity
+- **Unambiguous**: Each data structure has exactly one canonical representation
+- **Efficient**: Minimal memory overhead during parsing and low implementation complexity
 
 ## Design Goals
 
 ### 1. Visual Hierarchy
-The structure of the data should be instantly recognizable through visual inspection alone. Nested objects use braces `{}` that create clear visual boundaries, while arrays use brackets `[]` for easy identification. It's like having your data wear its heart on its sleeve - the structure just vibes with you.
+The structure of data should be instantly recognizable through visual inspection alone. Nested objects use braces `{}` that create clear visual boundaries, while arrays use brackets `[]` for unambiguous collection identification. This bracket-based syntax provides immediate structural context without requiring counting indentation levels or tracking implicit scope.
 
 ### 2. Minimal Syntax
-VIBE uses exactly 5 token types, making it one of the simplest structured formats to learn and implement. No commas, semicolons, or complex punctuation rules. We keep it simple because complicated syntax kills the vibe.
+VIBE uses exactly 6 core token types (identifiers, strings, numbers, booleans, braces, brackets), making it one of the simplest structured formats to learn and implement. The absence of mandatory commas, semicolons, or colons reduces syntactic noise and simplifies both human editing and parser implementation.
 
 ### 3. Unambiguous Grammar
-There is exactly one canonical way to represent any data structure in VIBE. This eliminates formatting debates and ensures consistent machine generation. No more "Is this the right way?" anxiety - VIBE's got your back.
+Each data structure has exactly one canonical representation in VIBE. This eliminates formatting debates, ensures consistent machine generation, and enables reliable diffing and version control. The deterministic grammar means there are no edge cases or surprising interpretations.
 
 ### 4. Fast Parsing
-Single-pass, O(n) parsing with a simple state machine. No backtracking, lookahead, or complex grammar rules that slow down parsing. Speed is part of the vibe - nobody likes waiting around.
+The grammar enables single-pass, O(n) parsing using a simple state machine. No backtracking, unbounded lookahead, or complex grammar rules are required. This design choice ensures predictable performance characteristics and low memory overhead, making VIBE suitable for resource-constrained environments.
 
 ### 5. Type Safety
-Clear, deterministic type inference rules ensure that values are consistently interpreted across different implementations. Types just work naturally, like they're meant to be.
+Clear, deterministic type inference rules ensure that values are consistently interpreted across all implementations. Numbers, booleans, and strings are unambiguously distinguished through syntax, eliminating the need for explicit type annotations while maintaining type safety.
 
 ### 6. Human-Friendly
-Optimized for human reading and writing, with meaningful error messages and forgiving whitespace rules. VIBE doesn't judge your spacing choices - it just goes with the flow.
+The syntax is optimized for human reading and writing. Whitespace is non-significant (except as token separation), comments are allowed anywhere, and unquoted strings reduce visual clutter for simple values. Error messages should provide clear context and actionable guidance for resolution.
 
 ## Grammar
 
@@ -186,16 +187,17 @@ server.host # contains dot (would be unquoted string)
 
 ## Data Types
 
-VIBE supports 5 fundamental data types with automatic type inference:
+VIBE supports 5 fundamental data types with automatic type inference based on syntax patterns:
 
 ### Type Inference Algorithm
 
-The type of a value is determined by examining its content:
+Type determination follows a strict precedence order to ensure unambiguous interpretation:
 
 ```
 function inferType(value):
     stripped = strip_whitespace(value)
     
+    # Check in order of specificity
     if stripped matches /^-?\d+$/
         return INTEGER
     else if stripped matches /^-?\d+\.\d+$/
@@ -203,16 +205,23 @@ function inferType(value):
     else if stripped == "true" or stripped == "false"
         return BOOLEAN
     else if starts_with(stripped, '"') and ends_with(stripped, '"')
-        return STRING (remove quotes)
+        return STRING (quoted, with escape sequence processing)
     else
-        return STRING (unquoted)
+        return STRING (unquoted, literal value)
 ```
+
+**Key Points:**
+- Type inference is deterministic and order-independent
+- No ambiguity between types - each syntax pattern maps to exactly one type
+- Implementations must follow this exact algorithm for compatibility
 
 ### Integer Type
 
-**Definition**: Sequence of digits, optionally preceded by minus sign
+**Definition**: A sequence of digits optionally preceded by a minus sign, representing whole numbers.
 
-**Range**: Implementation-defined, but must support at least 64-bit signed integers (-2^63 to 2^63-1)
+**Syntax Pattern**: `-?[0-9]+`
+
+**Range**: Implementations MUST support at least 64-bit signed integers (−2^63 to 2^63−1). Values outside this range MAY be rejected or promoted to arbitrary precision integers.
 
 **Examples**:
 ```
@@ -220,63 +229,125 @@ count 42
 negative -17
 zero 0
 large 9223372036854775807
+min_value -9223372036854775808
 ```
 
-**Invalid Examples**:
+**Rules**:
+- Leading zeros are allowed but discouraged (e.g., `007` is valid but should be written as `7`)
+- No thousands separators (commas, underscores, or spaces)
+- Plus sign prefix is not supported (use unsigned form)
+- Scientific notation is not supported for integers
+
+**Invalid Syntax**:
 ```
-with_comma 1,000    # Comma not allowed
-with_space 1 000    # Space not allowed
-leading_zero 007    # Leading zeros discouraged but not invalid
+with_comma 1,000    # Commas not allowed
+with_space 1 000    # Spaces not allowed
+with_plus +42       # Plus sign not supported
+hex 0xFF            # Only decimal notation supported
 ```
 
 ### Float Type
 
-**Definition**: Sequence of digits with exactly one decimal point
+**Definition**: A sequence of digits with exactly one decimal point, representing real numbers.
 
-**Range**: Implementation-defined, but must support at least IEEE 754 double precision
+**Syntax Pattern**: `-?[0-9]+\.[0-9]+`
+
+**Range**: Implementations MUST support at least IEEE 754 double precision (64-bit floating point).
 
 **Examples**:
 ```
 pi 3.14159
 negative -0.5
 zero 0.0
-scientific 1.23  # Scientific notation not supported
+small 0.001
+precise 123.456789012345
 ```
 
-**Special Values**: Implementations may support `inf`, `-inf`, and `nan` as special float values
+**Rules**:
+- Decimal point is REQUIRED (distinguishes from integers)
+- At least one digit must appear on both sides of decimal point
+- Scientific/exponential notation is NOT supported in VIBE 1.0
+- Leading zeros after decimal are significant (0.001 ≠ 0.1)
+
+**Special Values**: 
+Implementations MAY support these unquoted string literals with special float semantics:
+- `inf` or `Infinity` - positive infinity
+- `-inf` or `-Infinity` - negative infinity  
+- `nan` or `NaN` - not a number
+
+**Invalid Syntax**:
+```
+no_decimal 42       # Missing decimal point (this is an integer)
+scientific 1.23e10  # Scientific notation not supported
+trailing_dot 42.    # Requires digits after decimal
+leading_dot .42     # Requires digits before decimal
+```
 
 ### Boolean Type
 
-**Definition**: Exactly the literals `true` or `false`
+**Definition**: Logical true/false values represented by the exact literals `true` or `false`.
 
-**Case Sensitivity**: Case sensitive - `True`, `TRUE`, `False`, `FALSE` are strings, not booleans
+**Syntax**: Lowercase keywords only: `true` | `false`
+
+**Case Sensitivity**: VIBE is case-sensitive for boolean literals. `True`, `TRUE`, `False`, `FALSE`, or any other capitalization variants are treated as unquoted strings, not booleans.
 
 **Examples**:
 ```
 enabled true
 debug false
+production true
+maintenance_mode false
 ```
+
+**Common Mistakes**:
+```
+enabled True        # This is a STRING "True", not boolean
+debug FALSE         # This is a STRING "FALSE", not boolean  
+active yes          # This is a STRING "yes", not boolean
+disabled no         # This is a STRING "no", not boolean
+```
+
+**Design Rationale**: Using only lowercase `true` and `false` eliminates ambiguity and aligns with most programming languages (JavaScript, Python, JSON). Alternative boolean representations (yes/no, on/off, 1/0) can be used as strings and interpreted by application logic if needed.
 
 ### String Type
 
-Strings come in two forms: quoted and unquoted.
+Strings represent textual data and come in two forms: **quoted** and **unquoted**.
 
 #### Unquoted Strings
 
-**Valid Characters**: Any non-whitespace ASCII character (0x21-0x7E, excluding space, tab, newline, carriage return)
+Unquoted strings provide a cleaner syntax for simple identifiers and values without spaces or special characters.
 
-**Rules**:
-- Must contain only non-whitespace ASCII characters (0x21-0x7E)
-- Cannot start with a digit if the entire value looks like a number
-- Cannot be `true` or `false` (would be interpreted as boolean)
-- Stops at first whitespace character (space, tab, newline, carriage return)
-- Cannot contain structural characters when they would be ambiguous: `{`, `}`, `[`, `]`, `#`
-- Unicode characters require quoted strings
+**Syntax**: Any sequence of non-whitespace, non-special characters
+
+**Valid Characters**: Letters, digits, and the characters: `_`, `-`, `.`, `/`, `:`, `@`
+
+**Termination**: Unquoted strings end at:
+- Whitespace (space, tab, newline)
+- Structural characters (`{`, `}`, `[`, `]`)
+- Comment start (`#`)
+
+**Restrictions**:
+- MUST NOT match the pattern of a number (integer or float)
+- MUST NOT be exactly `true` or `false` (reserved for booleans)
+- MUST NOT contain spaces or special characters that could create ambiguity
+- Unicode characters beyond ASCII require quoted strings
 
 **Examples**:
 ```
 hostname server1.example.com
 path /usr/local/bin
+email admin@example.com
+version 2.1.0-beta
+identifier user_id_123
+url_path /api/v1/users
+```
+
+**When to Quote**: Use quoted strings when:
+- Value contains spaces
+- Value matches a number pattern but should be a string
+- Value is `true` or `false` but should be a string
+- Value contains special characters (`#`, `{`, `}`, `[`, `]`)
+- Value contains Unicode characters beyond ASCII
 protocol https
 url https://api.example.com/v1
 email user@example.com

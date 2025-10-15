@@ -1,0 +1,2168 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>VIBE Format Specification - Complete Technical Reference</title>
+        <meta
+            name="description"
+            content="Complete technical specification for the VIBE configuration format. Grammar, data types, parsing rules, and implementation guidelines."
+        />
+
+        <link
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            :root {
+                --primary: #6366f1;
+                --primary-light: #818cf8;
+                --primary-dark: #4f46e5;
+                --secondary: #8b5cf6;
+                --accent: #06b6d4;
+                --success: #10b981;
+                --warning: #f59e0b;
+                --danger: #ef4444;
+            }
+
+            /* Dark theme (default) */
+            :root {
+                --bg-primary: #0f172a;
+                --bg-secondary: #1e293b;
+                --bg-tertiary: #334155;
+                --text-primary: #f1f5f9;
+                --text-secondary: #cbd5e1;
+                --text-muted: #94a3b8;
+                --border-color: #475569;
+                --card-bg: #1e293b;
+                --code-bg: #0f172a;
+                --header-height: 5rem;
+            }
+
+            /* Light theme */
+            [data-theme="light"] {
+                --bg-primary: #ffffff;
+                --bg-secondary: #f8fafc;
+                --bg-tertiary: #f1f5f9;
+                --text-primary: #0f172a;
+                --text-secondary: #334155;
+                --text-muted: #64748b;
+                --border-color: #e2e8f0;
+                --card-bg: #ffffff;
+                --code-bg: #0f172a;
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                font-family:
+                    "IBM Plex Mono", "JetBrains Mono", "Fira Code",
+                    "Cascadia Code", "SF Mono", "Monaco", "Inconsolata",
+                    "Roboto Mono", "Source Code Pro", monospace;
+                line-height: 1.6;
+                color: var(--text-primary);
+                background: var(--bg-primary);
+                overflow-x: hidden;
+                transition:
+                    background-color 0.3s ease,
+                    color 0.3s ease;
+            }
+
+            /* Header */
+            header {
+                position: fixed;
+                top: 0;
+                width: 100%;
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(10px);
+                border-bottom: 1px solid var(--border-color);
+                z-index: 1000;
+                transition: all 0.3s ease;
+            }
+
+            [data-theme="light"] header {
+                background: rgba(255, 255, 255, 0.95);
+            }
+
+            nav {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 1rem 2rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            #toc-sidebar {
+                display: contents; !important
+            }
+
+            .logo {
+                font-size: 1.5rem;
+                font-weight: 900;
+                color: var(--text-primary);
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                transition: all 0.3s ease;
+            }
+
+            .logo-container {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .logo-svg {
+                height: 56px;
+                width: auto;
+                color: var(--primary);
+                transition: all 0.3s ease;
+                filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.3));
+            }
+
+            .logo:hover .logo-svg {
+                transform: scale(1.1);
+                filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.5));
+            }
+
+            .syntax-group {
+                animation: syntaxFloat 4s ease-in-out infinite;
+            }
+
+            .syntax-brace-open {
+                animation-delay: 0s;
+            }
+
+            .syntax-bracket-open {
+                animation-delay: 0.5s;
+            }
+
+            .syntax-bracket-close {
+                animation-delay: 1s;
+            }
+
+            .syntax-brace-close {
+                animation-delay: 1.5s;
+            }
+
+            @keyframes syntaxFloat {
+                0%,
+                100% {
+                    transform: translateY(0) scale(1);
+                    opacity: 1;
+                }
+                25% {
+                    transform: translateY(-2px) scale(1.1);
+                    opacity: 0.9;
+                }
+                50% {
+                    transform: translateY(0) scale(1.05);
+                    opacity: 1;
+                }
+                75% {
+                    transform: translateY(2px) scale(1.1);
+                    opacity: 0.9;
+                }
+            }
+
+            .logo:hover .syntax-group {
+                animation-duration: 1s;
+            }
+
+            .logo:hover .syntax-group path,
+            .logo:hover .syntax-group rect {
+                stroke: #8b5cf6;
+                filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
+            }
+
+            /* Theme-aware logo styling */
+            [data-theme="light"] .logo-svg {
+                color: var(--primary);
+                filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.2));
+            }
+
+            [data-theme="light"] .logo:hover .logo-svg {
+                filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.3));
+            }
+
+            nav a {
+                text-decoration: none;
+                color: var(--text-secondary);
+                font-weight: 500;
+                transition: color 0.3s;
+            }
+
+            nav a:hover {
+                color: var(--primary);
+            }
+
+            .nav-links {
+                display: flex;
+                gap: 2rem;
+                align-items: center;
+            }
+
+            .sidebar-toggle {
+                display: none;
+                font-size: 1.5rem;
+                cursor: pointer;
+                color: var(--text-secondary);
+                transition: color 0.3s;
+                padding: 0.5rem;
+                border-radius: 4px;
+            }
+
+            .sidebar-toggle:hover {
+                color: var(--primary);
+                background: rgba(99, 102, 241, 0.1);
+            }
+
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 499;
+                display: none;
+                backdrop-filter: blur(2px);
+            }
+
+            .github-btn {
+                background: var(--bg-tertiary);
+                color: var(--text-primary) !important;
+                padding: 0.5rem 1rem;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                border: 1px solid var(--border-color);
+            }
+
+            .github-btn:hover {
+                background: var(--primary);
+                color: white !important;
+                border-color: var(--primary);
+            }
+
+            /* Theme Switcher */
+            .theme-switcher {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin-left: 1rem;
+            }
+
+            .theme-toggle {
+                background: var(--bg-tertiary);
+                border: 1px solid var(--border-color);
+                border-radius: 20px;
+                padding: 0.25rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                position: relative;
+                width: 50px;
+                height: 26px;
+            }
+
+            .theme-toggle:hover {
+                border-color: var(--primary);
+            }
+
+            .theme-toggle-slider {
+                width: 18px;
+                height: 18px;
+                background: var(--text-primary);
+                border-radius: 50%;
+                transition: transform 0.3s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+            }
+
+            [data-theme="light"] .theme-toggle-slider {
+                transform: translateX(24px);
+            }
+
+            /* Container */
+            .container {
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                gap: 0;
+            }
+
+            .layout {
+                margin-top: 5rem;
+                padding-bottom: 1rem;
+                display: flex;
+                width: 100%;
+                gap: 0;
+            }
+
+            /* Sidebar */
+            .sidebar {
+                position: sticky;
+                top: var(--header-height);
+                width: 250px;
+                height: calc(100vh - var(--header-height));
+                height: calc(100dvh - var(--header-height));
+                overflow-y: auto;
+                overflow-x: hidden;
+                -webkit-overflow-scrolling: touch;
+                padding: 2rem;
+                background: var(--bg-secondary);
+                border-right: 1px solid var(--border-color);
+                box-shadow: 2px 0 12px rgba(0, 0, 0, 0.12);
+                z-index: 500;
+                box-sizing: border-box;
+                flex-shrink: 0;
+            }
+
+            [data-theme="light"] .sidebar {
+                background: var(--bg-secondary);
+                border-right: 1px solid var(--border-color);
+            }
+
+            .toc-title {
+                font-size: 1.125rem;
+                font-weight: 800;
+                color: var(--text-primary);
+                padding: 0 0 1rem 0;
+                margin-bottom: 1.5rem;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 0.75rem;
+                border-bottom: 2px solid var(--primary);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                text-align: left;
+            }
+
+            .toc-title i {
+                color: var(--primary);
+                font-size: 1.25rem;
+                margin-bottom: 0;
+            }
+
+            .toc-list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .toc-item {
+                margin-bottom: 0.25rem;
+            }
+
+            .toc-link {
+                display: flex;
+                align-items: center;
+                padding: 0.875rem 1rem;
+                color: var(--text-primary);
+                text-decoration: none;
+                font-size: 0.95rem;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                border-radius: 8px;
+                border-left: 4px solid transparent;
+                margin-bottom: 0.5rem;
+            }
+
+            [data-theme="light"] .toc-link {
+                color: var(--text-primary);
+            }
+
+            .toc-link:hover {
+                color: var(--primary);
+                background: rgba(99, 102, 241, 0.15);
+                border-left-color: var(--primary);
+                transform: translateX(4px);
+            }
+
+            .toc-link.active {
+                color: var(--primary);
+                background: rgba(99, 102, 241, 0.2);
+                border-left-color: var(--primary);
+                font-weight: 700;
+            }
+
+            [data-theme="light"] .toc-link:hover,
+            [data-theme="light"] .toc-link.active {
+                color: var(--primary);
+                background: rgba(99, 102, 241, 0.15);
+            }
+
+            .toc-link i {
+                flex-shrink: 0;
+                width: 20px;
+                margin-right: 12px;
+                font-size: 1rem;
+                opacity: 0.8;
+            }
+
+            .toc-submenu {
+                padding-left: 1rem;
+                margin-top: 0.25rem;
+                display: none;
+            }
+
+            .toc-item.active .toc-submenu {
+                display: block;
+            }
+
+            /* Main Content */
+            .main-content {
+                margin-right: 2rem;
+                margin-left: 3rem;
+                padding: 2rem;
+                background: var(--card-bg);
+                border-radius: 12px;
+                border: 1px solid var(--border-color);
+                position: relative;
+                z-index: 1;
+                flex: 1;
+            }
+
+            /* Typography */
+            h1 {
+                font-size: 3rem;
+                font-weight: 900;
+                margin-bottom: 1rem;
+                background: linear-gradient(
+                    135deg,
+                    var(--primary),
+                    var(--secondary)
+                );
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            h2 {
+                font-size: 2rem;
+                font-weight: 800;
+                margin: 3rem 0 1.5rem;
+                color: var(--text-primary);
+                border-bottom: 2px solid var(--border-color);
+                padding-bottom: 0.5rem;
+            }
+
+            h2:first-of-type {
+                margin-top: 1rem;
+            }
+
+            /* Offset anchors for fixed header */
+            section[id] {
+                scroll-margin-top: calc(var(--header-height) + 1rem);
+            }
+
+            h3 {
+                font-size: 1.5rem;
+                font-weight: 700;
+                margin: 2rem 0 1rem;
+                color: var(--text-primary);
+            }
+
+            h4 {
+                font-size: 1.125rem;
+                font-weight: 600;
+                margin: 1.5rem 0 0.75rem;
+                color: var(--text-secondary);
+            }
+
+            p {
+                margin-bottom: 1rem;
+                color: var(--text-secondary);
+                line-height: 1.8;
+            }
+
+            /* Hero Section */
+            .hero {
+                margin-bottom: 2rem;
+                padding-bottom: 2rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .hero-subtitle {
+                font-size: 1.25rem;
+                color: var(--text-secondary);
+                margin-bottom: 1rem;
+            }
+
+            .hero-description {
+                font-size: 1rem;
+                color: var(--text-muted);
+                max-width: 800px;
+                line-height: 1.8;
+            }
+
+            /* Code Blocks */
+            .code-block {
+                margin: 1.5rem 0;
+                border-radius: 8px;
+                overflow: hidden;
+                border: 1px solid var(--border-color);
+                background: var(--code-bg);
+            }
+
+            .code-header {
+                background: var(--bg-tertiary);
+                padding: 0.75rem 1rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .code-language {
+                font-size: 0.875rem;
+                color: var(--text-muted);
+                font-weight: 600;
+            }
+
+            .copy-btn {
+                background: transparent;
+                border: 1px solid var(--border-color);
+                color: var(--text-secondary);
+                padding: 0.25rem 0.75rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.75rem;
+                transition: all 0.2s;
+            }
+
+            .copy-btn:hover {
+                background: var(--primary);
+                color: white;
+                border-color: var(--primary);
+            }
+
+            .code-content {
+                padding: 1.5rem;
+                overflow-x: auto;
+                background: #0f172a;
+            }
+
+            [data-theme="light"] .code-content {
+                background: #0f172a;
+            }
+
+            pre {
+                margin: 0;
+                font-family: inherit;
+                font-size: 0.875rem;
+                line-height: 1.6;
+            }
+
+            code {
+                font-family: inherit;
+                color: #e2e8f0;
+            }
+
+            [data-theme="light"] code {
+                color: #e2e8f0;
+            }
+
+            :not(pre) > code {
+                background: rgba(99, 102, 241, 0.15);
+                padding: 0.2rem 0.4rem;
+                border-radius: 4px;
+                font-size: 0.875rem;
+                color: #a5b4fc;
+                border: 1px solid rgba(99, 102, 241, 0.3);
+                font-weight: 600;
+            }
+
+            [data-theme="light"] :not(pre) > code {
+                background: rgba(99, 102, 241, 0.1);
+                color: var(--primary-dark);
+                border-color: rgba(99, 102, 241, 0.3);
+            }
+
+            /* Tables */
+            .table-wrapper {
+                overflow-x: auto;
+                margin: 1.5rem 0;
+                border-radius: 8px;
+                border: 1px solid var(--border-color);
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.875rem;
+            }
+
+            th,
+            td {
+                padding: 0.75rem 1rem;
+                text-align: left;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            th {
+                background: var(--bg-tertiary);
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+
+            tr:hover {
+                background: rgba(99, 102, 241, 0.05);
+            }
+
+            /* Info Boxes */
+            .info-box {
+                padding: 1rem 1.5rem;
+                margin: 1.5rem 0;
+                border-radius: 8px;
+                border-left: 4px solid var(--primary);
+                background: rgba(99, 102, 241, 0.1);
+            }
+
+            .info-box.note {
+                border-left-color: var(--accent);
+                background: rgba(6, 182, 212, 0.1);
+            }
+
+            .info-box.warning {
+                border-left-color: var(--warning);
+                background: rgba(245, 158, 11, 0.1);
+            }
+
+            .info-box.tip {
+                border-left-color: var(--success);
+                background: rgba(16, 185, 129, 0.1);
+            }
+
+            .info-box.danger {
+                border-left-color: var(--danger);
+                background: rgba(239, 68, 68, 0.1);
+            }
+
+            .info-box-title {
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                color: var(--text-primary);
+            }
+
+            /* Grid Layouts */
+            .grid {
+                display: grid;
+                gap: 1.5rem;
+                margin: 1.5rem 0;
+            }
+
+            .grid-2 {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+
+            .grid-3 {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+
+            .card {
+                padding: 1.5rem;
+                background: var(--bg-secondary);
+                border-radius: 8px;
+                border: 1px solid var(--border-color);
+                transition: all 0.3s;
+            }
+
+            .card:hover {
+                transform: translateY(-4px);
+                border-color: var(--primary);
+                box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+            }
+
+            .card-title {
+                font-weight: 700;
+                margin-bottom: 0.75rem;
+                color: var(--text-primary);
+            }
+
+            .card-content {
+                color: var(--text-secondary);
+                font-size: 0.875rem;
+            }
+
+            /* Lists */
+            ul,
+            ol {
+                margin: 1rem 0 1rem 1.5rem;
+                color: var(--text-secondary);
+            }
+
+            li {
+                margin-bottom: 0.5rem;
+                line-height: 1.6;
+            }
+
+            /* Links */
+            a {
+                color: var(--primary);
+                text-decoration: none;
+                transition: color 0.2s;
+            }
+
+            a:hover {
+                color: var(--primary-light);
+                text-decoration: underline;
+            }
+
+            /* Syntax Highlighting */
+            .token.comment {
+                color: #64748b;
+            }
+            .token.string {
+                color: #22d3ee;
+            }
+            .token.number {
+                color: #a78bfa;
+            }
+            .token.boolean {
+                color: #fb923c;
+            }
+            .token.property {
+                color: #34d399;
+            }
+            .token.punctuation {
+                color: #94a3b8;
+            }
+            .token.keyword {
+                color: #f472b6;
+            }
+
+            /* Footer */
+            footer {
+                background: var(--bg-tertiary);
+                color: var(--text-primary);
+                padding: 2rem;
+                text-align: center;
+                border-top: 1px solid var(--border-color);
+            }
+
+            .footer-links {
+                display: flex;
+                gap: 2rem;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-bottom: 1.5rem;
+            }
+
+            .footer-links a {
+                color: var(--text-secondary);
+                text-decoration: none;
+            }
+
+            .footer-links a:hover {
+                color: var(--primary);
+            }
+
+            footer p {
+                opacity: 0.7;
+                font-size: 0.875rem;
+            }
+
+            /* Responsive Design */
+            @media (max-width: 1024px) {
+                .sidebar-toggle {
+                    display: block;
+                }
+
+                .container {
+                    display: block;
+                }
+
+                .layout {
+                    display: block;
+                    margin-top: 4rem;
+                }
+
+                .sidebar {
+                    position: fixed;
+                    left: -250px;
+                    transition: left 0.3s ease;
+                }
+
+                .sidebar.open {
+                    left: 0;
+                }
+
+                .sidebar-overlay.open {
+                    display: block;
+                }
+
+                .main-content {
+                    margin-left: 0;
+                    margin-right: 0;
+                    padding: 1.5rem;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .container {
+                    padding: 0 1rem;
+                }
+
+                nav {
+                    padding: 1rem;
+                }
+
+                .nav-links {
+                    gap: 1rem;
+                }
+
+                h1 {
+                    font-size: 2rem;
+                }
+
+                h2 {
+                    font-size: 1.5rem;
+                }
+
+                .main-content {
+                    margin-left: 0;
+                    margin-right: 0;
+                    max-width: 100%;
+                    padding: 1rem;
+                }
+
+                .sidebar {
+                    position: fixed;
+                    left: -250px;
+                    width: 250px;
+                    height: calc(100vh - var(--header-height));
+                    height: calc(100dvh - var(--header-height));
+                    overflow-y: auto;
+                    overflow-x: hidden;
+                    -webkit-overflow-scrolling: touch;
+                    padding: 2rem;
+                    background: var(--bg-secondary);
+                    border-right: 1px solid var(--border-color);
+                    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.12);
+                    z-index: 500;
+                    box-sizing: border-box;
+                    transition: left 0.3s ease;
+                }
+
+                .sidebar.open {
+                    left: 0;
+                }
+
+
+
+                .code-content {
+                    padding: 1rem;
+                }
+
+                .grid-2,
+                .grid-3 {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="index.html" class="logo">
+                    <div class="logo-container">
+                        <svg
+                            class="logo-svg"
+                            viewBox="0 0 80 40"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <!-- Background circles for depth -->
+                            <circle
+                                cx="40"
+                                cy="20"
+                                r="18"
+                                fill="url(#logoGradient)"
+                                opacity="0.1"
+                            />
+                            <circle
+                                cx="40"
+                                cy="20"
+                                r="14"
+                                fill="url(#logoGradient)"
+                                opacity="0.2"
+                            />
+
+                            <!-- Syntax symbols with modern styling -->
+                            <g class="syntax-group">
+                                <!-- Curly brace { -->
+                                <g class="syntax-brace-open">
+                                    <path
+                                        d="M18 8 Q15 8 15 11 L15 16 Q15 19 12 19 Q15 19 15 22 L15 27 Q15 30 18 30"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </g>
+
+                                <!-- Square bracket [ -->
+                                <g class="syntax-bracket-open">
+                                    <path
+                                        d="M26 9 Q24 9 24 11 L24 27 Q24 29 26 29 L30 29"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                    />
+                                    <path
+                                        d="M26 9 L30 9"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                    />
+                                </g>
+
+                                <!-- Square bracket ] -->
+                                <g class="syntax-bracket-close">
+                                    <path
+                                        d="M54 9 Q56 9 56 11 L56 27 Q56 29 54 29 L50 29"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                    />
+                                    <path
+                                        d="M54 9 L50 9"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                    />
+                                </g>
+
+                                <!-- Curly brace } -->
+                                <g class="syntax-brace-close">
+                                    <path
+                                        d="M62 8 Q65 8 65 11 L65 16 Q65 19 68 19 Q65 19 65 22 L65 27 Q65 30 62 30"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </g>
+                            </g>
+
+                            <!-- Gradient definition -->
+                            <defs>
+                                <linearGradient
+                                    id="logoGradient"
+                                    x1="0%"
+                                    y1="0%"
+                                    x2="100%"
+                                    y2="100%"
+                                >
+                                    <stop
+                                        offset="0%"
+                                        style="
+                                            stop-color: #6366f1;
+                                            stop-opacity: 1;
+                                        "
+                                    />
+                                    <stop
+                                        offset="100%"
+                                        style="
+                                            stop-color: #8b5cf6;
+                                            stop-opacity: 1;
+                                        "
+                                    />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <span
+                            style="
+                                font-family:
+                                    &quot;IBM Plex Mono&quot;, monospace;
+                                font-weight: 700;
+                                font-size: 1.2rem;
+                                margin-left: 0.5rem;
+                            "
+                            >VIBE</span
+                        >
+                    </div>
+                </a>
+                <div class="nav-links">
+                    <a href="index.html">Home</a>
+                    <a href="#grammar">Grammar</a>
+                    <a href="#data-types">Data Types</a>
+                    <a href="https://github.com/1ay1/vibe" class="github-btn">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                </div>
+                <div class="sidebar-toggle" onclick="toggleSidebar()">☰</div>
+                <div class="theme-switcher">
+                    <div class="theme-toggle" onclick="toggleTheme()">
+                        <div class="theme-toggle-slider">
+                            <span class="theme-icon">🌙</span>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <div class="container">
+            <div class="layout">
+                <aside class="sidebar">
+                    <nav id="toc-sidebar">
+                        <div class="toc-title">
+                            <i class="fas fa-book"></i>
+                            Contents
+                        </div>
+                        <ul class="toc-list">
+                            <li class="toc-item">
+                                <a href="#overview" class="toc-link">
+                                    <i class="fas fa-info-circle"></i>
+                                    Overview
+                                </a>
+                            </li>
+                            <li class="toc-item">
+                                <a href="#design-goals" class="toc-link">
+                                    <i class="fas fa-bullseye"></i>
+                                    Design Goals
+                                </a>
+                            </li>
+                            <li class="toc-item">
+                                <a href="#grammar" class="toc-link">
+                                    <i class="fas fa-code"></i>
+                                    Grammar
+                                </a>
+                            </li>
+                            <li class="toc-item">
+                                <a href="#data-types" class="toc-link">
+                                    <i class="fas fa-database"></i>
+                                    Data Types
+                                </a>
+                            </li>
+                            <li class="toc-item">
+                                <a href="#lexical-analysis" class="toc-link">
+                                    <i class="fas fa-search"></i>
+                                    Lexical Analysis
+                                </a>
+                            </li>
+                            <li class="toc-item">
+                                <a href="#comments" class="toc-link">
+                                    <i class="fas fa-comment"></i>
+                                    Comments
+                                </a>
+                            </li>
+                            <li class="toc-item">
+                                <a href="#whitespace" class="toc-link">
+                                    <i class="fas fa-indent"></i>
+                                    Whitespace
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside><div class="sidebar-overlay" onclick="toggleSidebar()"></div><main class="main-content">
+                    <div class="hero">
+                        <h1>VIBE Format Specification</h1>
+                        <p class="hero-subtitle">
+                            Version 1.0 - Complete Technical Reference
+                        </p>
+                        <p class="hero-description">
+                            This document provides the complete technical
+                            specification for the VIBE configuration format,
+                            including formal grammar definitions, parsing
+                            algorithms, data type specifications, and
+                            implementation guidelines for library developers.
+                        </p>
+                    </div>
+
+                    <section id="overview">
+                        <h2><i class="fas fa-file-alt"></i> Overview</h2>
+                        <p>
+                            VIBE (Visual Intuitive Bracket Encoding) is a
+                            human-friendly configuration format designed to be
+                            more intuitive than YAML and more forgiving than
+                            JSON. It uses Python-like indentation for structure,
+                            supports both unquoted and quoted strings, and
+                            provides clear visual hierarchy through its
+                            bracket-based syntax.
+                        </p>
+
+                        <div class="info-box note">
+                            <div class="info-box-title">
+                                <i class="fas fa-info-circle"></i>
+                                Design Philosophy
+                            </div>
+                            <p>
+                                VIBE prioritizes readability and ease of use
+                                while maintaining strict parsing rules that
+                                prevent ambiguity. Every valid VIBE document has
+                                exactly one interpretation.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section id="design-goals">
+                        <h2><i class="fas fa-bullseye"></i> Design Goals</h2>
+
+                        <div class="grid grid-3">
+                            <div class="card">
+                                <div class="card-title">
+                                    <i class="fas fa-eye"></i>
+                                    Visual Hierarchy
+                                </div>
+                                <div class="card-content">
+                                    Clear visual structure using brackets and
+                                    indentation that mirrors the logical
+                                    structure of data
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-title">
+                                    <i class="fas fa-feather"></i>
+                                    Minimal Syntax
+                                </div>
+                                <div class="card-content">
+                                    Reduced punctuation overhead with optional
+                                    commas and minimal quoting requirements
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-title">
+                                    <i class="fas fa-lock"></i>
+                                    Unambiguous Grammar
+                                </div>
+                                <div class="card-content">
+                                    No edge cases or surprising behaviors -
+                                    predictable parsing with clear error
+                                    messages
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-title">
+                                    <i class="fas fa-bolt"></i>
+                                    Fast Parsing
+                                </div>
+                                <div class="card-content">
+                                    Simple grammar enables efficient single-pass
+                                    parsing with O(n) time complexity
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-title">
+                                    <i class="fas fa-shield-alt"></i>
+                                    Type Safety
+                                </div>
+                                <div class="card-content">
+                                    Clear type inference rules with no implicit
+                                    type coercion or surprising conversions
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-title">
+                                    <i class="fas fa-user-check"></i>
+                                    Human-Friendly
+                                </div>
+                                <div class="card-content">
+                                    Intuitive syntax that feels natural to read
+                                    and write, with helpful error messages
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="grammar">
+                        <h2><i class="fas fa-code"></i> Grammar</h2>
+
+                        <h3 id="formal-grammar">
+                            Formal Grammar Definition (EBNF)
+                        </h3>
+                        <p>
+                            The VIBE format is defined by the following
+                            <strong>Extended Backus-Naur Form (EBNF)</strong>
+                            grammar:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">EBNF</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token keyword">document</span>     = { assignment | comment | newline } ;
+<span class="token keyword">assignment</span>  = identifier ":" value newline ;
+<span class="token keyword">value</span>       = string | number | boolean | array | object ;
+<span class="token keyword">object</span>      = "{" newline { assignment } "}" ;
+<span class="token keyword">array</span>       = "[" [ value { "," value } ] "]" ;
+<span class="token keyword">identifier</span>  = letter { letter | digit | "_" | "-" } ;</code></pre>
+                            </div>
+                        </div>
+
+                        <h3 id="tokens">Tokens</h3>
+
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Token</th>
+                                        <th>Pattern</th>
+                                        <th>Description</th>
+                                        <th>Example</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>IDENTIFIER</code></td>
+                                        <td>
+                                            <code>[a-zA-Z][a-zA-Z0-9_-]*</code>
+                                        </td>
+                                        <td>
+                                            Object keys and unquoted strings
+                                        </td>
+                                        <td><code>server_name</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>INTEGER</code></td>
+                                        <td><code>-?[0-9]+</code></td>
+                                        <td>Whole numbers</td>
+                                        <td>
+                                            <code>42</code>, <code>-100</code>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>FLOAT</code></td>
+                                        <td><code>-?[0-9]+\.[0-9]+</code></td>
+                                        <td>Decimal numbers</td>
+                                        <td>
+                                            <code>3.14</code>, <code>-2.5</code>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>BOOLEAN</code></td>
+                                        <td><code>true|false</code></td>
+                                        <td>Boolean values</td>
+                                        <td>
+                                            <code>true</code>,
+                                            <code>false</code>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>STRING</code></td>
+                                        <td>
+                                            <code>"[^"]*"</code> or
+                                            <code>'[^']*'</code>
+                                        </td>
+                                        <td>Quoted strings</td>
+                                        <td><code>"Hello World"</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>LBRACE</code></td>
+                                        <td><code>{</code></td>
+                                        <td>Object start</td>
+                                        <td><code>{</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>RBRACE</code></td>
+                                        <td><code>}</code></td>
+                                        <td>Object end</td>
+                                        <td><code>}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>LBRACKET</code></td>
+                                        <td><code>[</code></td>
+                                        <td>Array start</td>
+                                        <td><code>[</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>RBRACKET</code></td>
+                                        <td><code>]</code></td>
+                                        <td>Array end</td>
+                                        <td><code>]</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>COLON</code></td>
+                                        <td><code>:</code></td>
+                                        <td>Key-value separator</td>
+                                        <td><code>:</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>COMMA</code></td>
+                                        <td><code>,</code></td>
+                                        <td>Array element separator</td>
+                                        <td><code>,</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>COMMENT</code></td>
+                                        <td><code>#.*</code></td>
+                                        <td>Single-line comment</td>
+                                        <td><code># Comment</code></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3 id="syntax-rules">Syntax Rules</h3>
+
+                        <h4>Assignment</h4>
+                        <p>
+                            The fundamental unit of VIBE is the key-value
+                            assignment:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token property">key</span> <span class="token string">value</span>
+<span class="token property">name</span> <span class="token string">"John Doe"</span>
+<span class="token property">age</span> <span class="token number">30</span>
+<span class="token property">active</span> <span class="token boolean">true</span></code></pre>
+                            </div>
+                        </div>
+
+                        <div class="info-box tip">
+                            <div class="info-box-title">
+                                <i class="fas fa-lightbulb"></i>
+                                Key Naming Convention
+                            </div>
+                            <p>
+                                Keys must start with a letter and can contain
+                                letters, numbers, underscores, and hyphens. Use
+                                descriptive names that clearly indicate the
+                                purpose of each value.
+                            </p>
+                        </div>
+
+                        <h4>Object Declaration</h4>
+                        <p>
+                            Objects represent nested structured data using curly
+                            braces:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token property">database</span> <span class="token punctuation">{</span>
+    <span class="token property">host</span> <span class="token string">localhost</span>
+    <span class="token property">port</span> <span class="token number">5432</span>
+    <span class="token property">credentials</span> <span class="token punctuation">{</span>
+        <span class="token property">username</span> <span class="token string">admin</span>
+        <span class="token property">password</span> <span class="token string">"secret123"</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+                            </div>
+                        </div>
+
+                        <h4>Array Declaration</h4>
+                        <p>
+                            Arrays contain ordered collections of values using
+                            square brackets:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token property">servers</span> <span class="token punctuation">[</span><span class="token string">web1</span> <span class="token string">web2</span> <span class="token string">web3</span><span class="token punctuation">]</span>
+<span class="token property">ports</span> <span class="token punctuation">[</span><span class="token number">80</span> <span class="token number">443</span> <span class="token number">8080</span><span class="token punctuation">]</span>
+
+<span class="token comment"># Multi-line arrays for readability</span>
+<span class="token property">allowed_origins</span> <span class="token punctuation">[</span>
+    <span class="token string">"https://example.com"</span>
+    <span class="token string">"https://api.example.com"</span>
+    <span class="token string">"https://admin.example.com"</span>
+<span class="token punctuation">]</span></code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="data-types">
+                        <h2><i class="fas fa-database"></i> Data Types</h2>
+
+                        <div class="info-box">
+                            <div class="info-box-title">
+                                <i class="fas fa-magic"></i>
+                                Type Inference
+                            </div>
+                            <p>
+                                VIBE automatically infers types based on syntax.
+                                Numbers without decimal points are integers,
+                                numbers with decimals are floats,
+                                <code>true</code> and <code>false</code> are
+                                booleans, and everything else is treated as a
+                                string.
+                            </p>
+                        </div>
+
+                        <h3 id="integers">Integer Type</h3>
+                        <p>
+                            Integers represent whole numbers and are parsed as
+                            64-bit signed values (<code>int64</code>).
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token property">positive</span> <span class="token number">42</span>
+<span class="token property">negative</span> <span class="token number">-100</span>
+<span class="token property">zero</span> <span class="token number">0</span>
+<span class="token property">large</span> <span class="token number">9223372036854775807</span></code></pre>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Property</th>
+                                        <th>Value</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>Range</code></td>
+                                        <td>-2^63 to 2^63-1</td>
+                                        <td><code>int64</code> range</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>Pattern</code></td>
+                                        <td><code>-?[0-9]+</code></td>
+                                        <td>Optional negative sign</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>Leading zeros</code></td>
+                                        <td>Not allowed</td>
+                                        <td>
+                                            Except for <code>0</code> itself
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3 id="floats">Float Type</h3>
+                        <p>
+                            Floating-point numbers represent decimal values and
+                            are parsed as 64-bit IEEE 754 doubles.
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token property">pi</span> <span class="token number">3.14159</span>
+<span class="token property">negative</span> <span class="token number">-2.5</span>
+<span class="token property">small</span> <span class="token number">0.001</span></code></pre>
+                            </div>
+                        </div>
+
+                        <div class="info-box warning">
+                            <div class="info-box-title">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Decimal Point Required
+                            </div>
+                            <p>
+                                A decimal point must be present for a number to
+                                be recognized as a float. Scientific notation
+                                (e.g., <code>1e10</code>) is not supported in
+                                VIBE 1.0.
+                            </p>
+                        </div>
+
+                        <h3 id="booleans">Boolean Type</h3>
+                        <p>
+                            Boolean values represent true/false states using the
+                            keywords <code>true</code> and <code>false</code>.
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token property">enabled</span> <span class="token boolean">true</span>
+<span class="token property">debug</span> <span class="token boolean">false</span>
+<span class="token property">production</span> <span class="token boolean">true</span></code></pre>
+                            </div>
+                        </div>
+
+                        <h3 id="strings">String Type</h3>
+
+                        <h4>Unquoted Strings</h4>
+                        <p>
+                            Simple strings without special characters can be
+                            written without quotes:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token property">name</span> <span class="token string">John</span>
+<span class="token property">status</span> <span class="token string">active</span>
+<span class="token property">role</span> <span class="token string">administrator</span></code></pre>
+                            </div>
+                        </div>
+
+                        <div class="info-box tip">
+                            <div class="info-box-title">
+                                <i class="fas fa-info-circle"></i>
+                                When to Use Unquoted Strings
+                            </div>
+                            <p>
+                                Unquoted strings work great for simple
+                                identifiers, file names, and values without
+                                spaces or special characters. They make configs
+                                cleaner and more readable.
+                            </p>
+                        </div>
+
+                        <h4>Quoted Strings</h4>
+                        <p>
+                            Strings with spaces, special characters, or that
+                            could be confused with other types must be quoted:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token property">message</span> <span class="token string">"Hello, World!"</span>
+<span class="token property">path</span> <span class="token string">"/usr/local/bin"</span>
+<span class="token property">email</span> <span class="token string">"user@example.com"</span>
+<span class="token property">number_as_string</span> <span class="token string">"42"</span></code></pre>
+                            </div>
+                        </div>
+
+                        <p>
+                            <strong
+                                >Supported escape sequences in quoted
+                                strings:</strong
+                            >
+                        </p>
+                        <ul>
+                            <li><code>\\</code> - Backslash</li>
+                            <li><code>\"</code> - Double quote</li>
+                            <li><code>\n</code> - Newline</li>
+                            <li><code>\t</code> - Tab</li>
+                            <li><code>\r</code> - Carriage return</li>
+                        </ul>
+
+                        <h3 id="arrays">Arrays</h3>
+                        <p>
+                            Arrays are ordered collections of values enclosed in
+                            square brackets:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token comment"># Inline arrays</span>
+<span class="token property">numbers</span> <span class="token punctuation">[</span><span class="token number">1</span> <span class="token number">2</span> <span class="token number">3</span> <span class="token number">4</span> <span class="token number">5</span><span class="token punctuation">]</span>
+<span class="token property">names</span> <span class="token punctuation">[</span><span class="token string">Alice</span> <span class="token string">Bob</span> <span class="token string">Charlie</span><span class="token punctuation">]</span>
+
+<span class="token comment"># Multi-line arrays</span>
+<span class="token property">colors</span> <span class="token punctuation">[</span>
+    <span class="token string">red</span>
+    <span class="token string">green</span>
+    <span class="token string">blue</span>
+<span class="token punctuation">]</span>
+
+<span class="token comment"># Mixed types (allowed but not recommended)</span>
+<span class="token property">mixed</span> <span class="token punctuation">[</span><span class="token number">42</span> <span class="token string">"text"</span> <span class="token boolean">true</span> <span class="token number">3.14</span><span class="token punctuation">]</span>
+
+<span class="token comment"># Nested arrays</span>
+<span class="token property">matrix</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">[</span><span class="token number">1</span> <span class="token number">2</span> <span class="token number">3</span><span class="token punctuation">]</span>
+    <span class="token punctuation">[</span><span class="token number">4</span> <span class="token number">5</span> <span class="token number">6</span><span class="token punctuation">]</span>
+    <span class="token punctuation">[</span><span class="token number">7</span> <span class="token number">8</span> <span class="token number">9</span><span class="token punctuation">]</span>
+<span class="token punctuation">]</span></code></pre>
+                            </div>
+                        </div>
+
+                        <div class="info-box note">
+                            <div class="info-box-title">
+                                <i class="fas fa-code"></i>
+                                Array Syntax Rules
+                            </div>
+                            <ul>
+                                <li>Elements are separated by commas</li>
+                                <li>Trailing commas are allowed</li>
+                                <li>
+                                    Arrays can span multiple lines for
+                                    readability
+                                </li>
+                                <li>Empty arrays <code>[]</code> are valid</li>
+                                <li>
+                                    Nested arrays create multi-dimensional
+                                    structures
+                                </li>
+                            </ul>
+                        </div>
+
+                        <h3 id="objects">Objects</h3>
+                        <p>
+                            Objects represent structured data with named fields
+                            enclosed in curly braces:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token property">server</span> <span class="token punctuation">{</span>
+    <span class="token property">host</span> <span class="token string">localhost</span>
+    <span class="token property">port</span> <span class="token number">8080</span>
+    <span class="token property">ssl</span> <span class="token punctuation">{</span>
+        <span class="token property">enabled</span> <span class="token boolean">true</span>
+        <span class="token property">cert</span> <span class="token string">"/path/to/cert.pem"</span>
+        <span class="token property">key</span> <span class="token string">"/path/to/key.pem"</span>
+    <span class="token punctuation">}</span>
+    <span class="token property">routes</span> <span class="token punctuation">[</span>
+        <span class="token punctuation">{</span> <span class="token property">path</span> <span class="token string">/api</span> <span class="token property">handler</span> <span class="token string">api_handler</span> <span class="token punctuation">}</span>
+        <span class="token punctuation">{</span> <span class="token property">path</span> <span class="token string">/static</span> <span class="token property">handler</span> <span class="token string">static_handler</span> <span class="token punctuation">}</span>
+    <span class="token punctuation">]</span>
+<span class="token punctuation">}</span></code></pre>
+                            </div>
+                        </div>
+
+                        <div class="info-box tip">
+                            <div class="info-box-title">
+                                <i class="fas fa-sitemap"></i>
+                                Object Nesting Best Practices
+                            </div>
+                            <p>
+                                Use indentation to clearly show hierarchy. Keep
+                                nesting levels reasonable (typically 3-4 levels
+                                max) for maintainability. Group related
+                                configuration together in logical objects.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section id="lexical-analysis">
+                        <h2><i class="fas fa-search"></i> Lexical Analysis</h2>
+
+                        <p>
+                            The lexical analyzer (lexer) processes the input
+                            character stream and produces a sequence of tokens.
+                            This is the first phase of parsing.
+                        </p>
+
+                        <h3>Character Classes</h3>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Class</th>
+                                        <th>Pattern</th>
+                                        <th>Usage</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Letter</td>
+                                        <td><code>[a-zA-Z]</code></td>
+                                        <td>Identifier start</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Digit</td>
+                                        <td><code>[0-9]</code></td>
+                                        <td>Numbers</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Whitespace</td>
+                                        <td><code>[ \t\r\n]</code></td>
+                                        <td>Separation</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Special</td>
+                                        <td><code>:{}[],</code></td>
+                                        <td>Syntax elements</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3>Tokenization Process</h3>
+                        <ol>
+                            <li>
+                                <strong>Skip whitespace</strong> - Space, tab,
+                                and newline characters are generally ignored
+                                except as token separators
+                            </li>
+                            <li>
+                                <strong>Identify token type</strong> - Determine
+                                what kind of token based on the first
+                                character(s)
+                            </li>
+                            <li>
+                                <strong>Consume characters</strong> - Read
+                                characters that belong to this token
+                            </li>
+                            <li>
+                                <strong>Create token object</strong> - Store the
+                                token type, value, and position information
+                            </li>
+                            <li>
+                                <strong>Repeat</strong> - Continue until end of
+                                file
+                            </li>
+                        </ol>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">Pseudocode</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token keyword">function</span> <span class="token function">tokenize</span>(input):
+    tokens = []
+    position = 0
+
+    <span class="token keyword">while</span> position &lt; input.length:
+        <span class="token keyword">skip</span> whitespace
+
+        <span class="token keyword">if</span> current char is letter:
+            token = read_identifier_or_keyword()
+        <span class="token keyword">else if</span> current char is digit or minus:
+            token = read_number()
+        <span class="token keyword">else if</span> current char is quote:
+            token = read_string()
+        <span class="token keyword">else if</span> current char is special:
+            token = read_punctuation()
+        <span class="token keyword">else if</span> current char is <span class="token string">'#'</span>:
+            skip_comment()
+            <span class="token keyword">continue</span>
+
+        tokens.append(token)
+
+    <span class="token keyword">return</span> tokens</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="comments">
+                        <h2><i class="fas fa-comment"></i> Comments</h2>
+
+                        <p>
+                            Comments in VIBE use the hash symbol
+                            (<code>#</code>) and extend to the end of the line:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE</span>
+                                <button
+                                    class="copy-btn"
+                                    onclick="copyCode(this)"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token comment"># This is a full-line comment</span>
+<span class="token property">server_name</span> <span class="token string">production</span>  <span class="token comment"># Inline comment</span>
+
+<span class="token comment"># Multi-line comments require # on each line</span>
+<span class="token comment"># Like this</span>
+<span class="token comment"># And this</span>
+
+<span class="token property">database</span> <span class="token punctuation">{</span>
+    <span class="token comment"># Connection settings</span>
+    <span class="token property">host</span> <span class="token string">localhost</span>
+    <span class="token property">port</span> <span class="token number">5432</span>
+<span class="token punctuation">}</span></code></pre>
+                            </div>
+                        </div>
+
+                        <div class="info-box note">
+                            <div class="info-box-title">
+                                <i class="fas fa-pencil-alt"></i>
+                                Comment Guidelines
+                            </div>
+                            <ul>
+                                <li>
+                                    <em>Document why</em>, not what - Explain
+                                    the reasoning behind configuration choices
+                                </li>
+                                <li>
+                                    Keep comments up to date with configuration
+                                    changes
+                                </li>
+                                <li>
+                                    Use comments to mark sections in large
+                                    configuration files
+                                </li>
+                                <li>
+                                    Avoid obvious comments that just restate the
+                                    key name
+                                </li>
+                                <li>
+                                    Include URLs or references for complex
+                                    configurations
+                                </li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section id="whitespace">
+                        <h2>
+                            <i class="fas fa-indent"></i> Whitespace and
+                            Formatting
+                        </h2>
+
+                        <p>
+                            VIBE uses indentation for visual hierarchy but does
+                            not enforce <strong>significant whitespace</strong> like Python
+                            or YAML. The parser relies on brackets and braces
+                            for structure.
+                        </p>
+
+                        <div class="info-box tip">
+                            <div class="info-box-title">
+                                <i class="fas fa-info-circle"></i>
+                                Whitespace is Visual Only
+                            </div>
+                            <p>
+                                Unlike Python or YAML, indentation in VIBE does not affect parsing.
+                                Structure is determined entirely by brackets <code>{}</code> and braces <code>[]</code>.
+                                This means you can format your config files however you prefer without worrying about breaking the parser.
+                            </p>
+                        </div>
+
+                        <h3>Whitespace Rules</h3>
+                        <ul>
+                            <li>Spaces, tabs, and newlines separate tokens</li>
+                            <li>Multiple whitespace characters are treated as one separator</li>
+                            <li>Indentation is optional and purely cosmetic</li>
+                            <li>Trailing whitespace is ignored</li>
+                        </ul>
+
+                        <div class="grid grid-2">
+                            <div class="card">
+                                <div class="card-title">
+                                    <i class="fas fa-check-circle"></i>
+                                    Recommended Style
+                                </div>
+                                <div class="card-content">
+                                    <ul>
+                                        <li>Use 2-4 spaces for indentation</li>
+                                        <li>Be consistent within each file</li>
+                                        <li>Add blank lines between sections</li>
+                                        <li>One statement per line</li>
+                                        <li>Align nested structures visually</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-title">
+                                    <i class="fas fa-code"></i>
+                                    Valid But Not Recommended
+                                </div>
+                                <div class="card-content">
+                                    <ul>
+                                        <li>No indentation at all</li>
+                                        <li>Mixing tabs and spaces</li>
+                                        <li>Inconsistent indentation levels</li>
+                                        <li>Multiple statements on one line</li>
+                                        <li>No blank lines between sections</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h3>Formatting Examples</h3>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE - Recommended Style</span>
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token comment"># Clean, readable formatting</span>
+<span class="token property">server</span> <span class="token punctuation">{</span>
+    <span class="token property">host</span> <span class="token string">localhost</span>
+    <span class="token property">port</span> <span class="token number">8080</span>
+
+    <span class="token property">database</span> <span class="token punctuation">{</span>
+        <span class="token property">connection</span> <span class="token string">"postgresql://localhost/mydb"</span>
+        <span class="token property">pool_size</span> <span class="token number">10</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+                            </div>
+                        </div>
+
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-language">VIBE - Valid But Messy</span>
+                                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            </div>
+                            <div class="code-content">
+                                <pre><code><span class="token comment"># Still valid, but harder to read</span>
+<span class="token property">server</span> <span class="token punctuation">{</span> <span class="token property">host</span> <span class="token string">localhost</span> <span class="token property">port</span> <span class="token number">8080</span>
+<span class="token property">database</span> <span class="token punctuation">{</span> <span class="token property">connection</span> <span class="token string">"postgresql://localhost/mydb"</span>
+  <span class="token property">pool_size</span> <span class="token number">10</span> <span class="token punctuation">}</span> <span class="token punctuation">}</span></code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                </main>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-links">
+                <a href="specification.html">Documentation</a>
+                <a href="https://github.com/1ay1/vibe">GitHub</a>
+                <a href="https://github.com/1ay1/vibe/issues">Issues</a>
+                <a href="https://github.com/1ay1/vibe/releases">Releases</a>
+            </div>
+            <p>
+                &copy; 2025 VIBE Project. MIT Licensed. Keep calm and VIBE on 🌊
+            </p>
+        </footer>
+
+        <script>
+            // Copy code functionality
+            function copyCode(button) {
+                const codeBlock = button
+                    .closest(".code-block")
+                    .querySelector("pre code");
+                const text = codeBlock.textContent;
+
+                navigator.clipboard.writeText(text).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = "Copied!";
+                    button.style.background = "var(--success)";
+
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = "";
+                    }, 2000);
+                });
+            }
+
+            // Theme switching functionality
+            function toggleSidebar() {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.querySelector('.sidebar-overlay');
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('open');
+            }
+
+            function toggleTheme() {
+                const html = document.documentElement;
+                const currentTheme = html.getAttribute("data-theme");
+                const newTheme = currentTheme === "light" ? null : "light";
+
+                if (newTheme) {
+                    html.setAttribute("data-theme", newTheme);
+                    localStorage.setItem("theme", newTheme);
+                } else {
+                    html.removeAttribute("data-theme");
+                    localStorage.setItem("theme", "dark");
+                }
+
+                updateThemeIcon();
+                updateHeaderHeight();
+            }
+
+            function updateThemeIcon() {
+                const themeIcon = document.querySelector(".theme-icon");
+                const currentTheme =
+                    document.documentElement.getAttribute("data-theme");
+                themeIcon.textContent = currentTheme === "light" ? "☀️" : "🌙";
+            }
+
+            function updateHeaderHeight() {
+                const header = document.querySelector("header");
+                if (header) {
+                    const h = header.offsetHeight + "px";
+                    document.documentElement.style.setProperty("--header-height", h);
+                }
+            }
+
+            // Initialize theme on page load
+            document.addEventListener("DOMContentLoaded", () => {
+                const savedTheme = localStorage.getItem("theme");
+
+                if (savedTheme === "light") {
+                    document.documentElement.setAttribute("data-theme", "light");
+                } else {
+                    document.documentElement.removeAttribute("data-theme");
+                }
+
+                updateThemeIcon();
+                updateHeaderHeight();
+
+                // Recalculate after fonts load (fonts can change header height)
+                if (document.fonts && document.fonts.ready) {
+                    document.fonts.ready.then(() => updateHeaderHeight()).catch(() => {});
+                }
+
+                // Observe header resize to keep sidebar aligned
+                const header = document.querySelector("header");
+                if (window.ResizeObserver && header) {
+                    const headerObserver = new ResizeObserver(() => updateHeaderHeight());
+                    headerObserver.observe(header);
+                }
+            });
+
+            // Recompute header height on resize and load
+            window.addEventListener("resize", updateHeaderHeight);
+            window.addEventListener("load", updateHeaderHeight);
+
+            // Active navigation highlighting
+            window.addEventListener("scroll", () => {
+                const sections = document.querySelectorAll("section[id]");
+                const navLinks = document.querySelectorAll(".toc-link");
+
+                let current = "";
+                sections.forEach((section) => {
+                    const sectionTop = section.offsetTop;
+                    if (window.scrollY >= sectionTop - 100) {
+                        current = section.getAttribute("id");
+                    }
+                });
+
+                navLinks.forEach((link) => {
+                    link.classList.remove("active");
+                    if (link.getAttribute("href") === "#" + current) {
+                        link.classList.add("active");
+                    }
+                });
+            });
+
+            // Smooth scroll for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+                anchor.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(
+                        this.getAttribute("href")
+                    );
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                        });
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>
+        </script>
+    </body>
+</html>

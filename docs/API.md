@@ -90,7 +90,7 @@ VibeValue* vibe_parse_string(VibeParser* parser, const char* input);
 
 **Example:**
 ```c
-const char* config = 
+const char* config =
     "app {\n"
     "  name \"My App\"\n"
     "  port 8080\n"
@@ -764,26 +764,26 @@ int main() {
         fprintf(stderr, "Failed to create parser\n");
         return 1;
     }
-    
+
     // 2. Parse file
     VibeValue* config = vibe_parse_file(parser, "config.vibe");
     if (!config) {
         VibeError error = vibe_get_last_error(parser);
-        fprintf(stderr, "Error at line %d: %s\n", 
+        fprintf(stderr, "Error at line %d: %s\n",
                 error.line, error.message);
         vibe_parser_free(parser);
         return 1;
     }
-    
+
     // 3. Access values using dot notation
     const char* app_name = vibe_get_string(config, "app.name");
     int64_t port = vibe_get_int(config, "server.port");
     bool debug = vibe_get_bool(config, "app.debug");
-    
+
     printf("Application: %s\n", app_name ? app_name : "Unknown");
     printf("Port: %lld\n", (long long)port);
     printf("Debug: %s\n", debug ? "enabled" : "disabled");
-    
+
     // 4. Access arrays
     VibeArray* servers = vibe_get_array(config, "servers");
     if (servers) {
@@ -795,7 +795,7 @@ int main() {
             }
         }
     }
-    
+
     // 5. Access nested objects
     VibeObject* ssl = vibe_get_object(config, "server.ssl");
     if (ssl) {
@@ -806,11 +806,11 @@ int main() {
             printf("\n");
         }
     }
-    
+
     // 6. Cleanup
     vibe_value_free(config);
     vibe_parser_free(parser);
-    
+
     return 0;
 }
 ```
@@ -896,7 +896,7 @@ vibe_value_print(config, 0);
    ```c
    // Good
    const char* name = vibe_get_string(config, "app.name");
-   
+
    // Also works but more verbose
    VibeObject* app = vibe_get_object(config, "app");
    VibeValue* name_val = vibe_object_get(app, "name");

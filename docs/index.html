@@ -1,0 +1,2524 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>VIBE - Configuration That Just Flows</title>
+        <meta
+            name="description"
+            content="A human-friendly configuration language. No YAML nightmares. No JSON comma chaos. Just clean config that makes sense."
+        />
+
+        <link
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            :root {
+                --primary: #6366f1;
+                --primary-light: #818cf8;
+                --primary-dark: #4f46e5;
+                --secondary: #8b5cf6;
+                --accent: #06b6d4;
+                --success: #10b981;
+                --warning: #f59e0b;
+                --danger: #ef4444;
+            }
+
+            /* Dark theme (default) */
+            :root {
+                --bg-primary: #0f172a;
+                --bg-secondary: #1e293b;
+                --bg-tertiary: #334155;
+                --text-primary: #f1f5f9;
+                --text-secondary: #cbd5e1;
+                --text-muted: #94a3b8;
+                --border-color: #475569;
+                --card-bg: #1e293b;
+                --code-bg: #0f172a;
+            }
+
+            /* Light theme */
+            [data-theme="light"] {
+                --bg-primary: #ffffff;
+                --bg-secondary: #f8fafc;
+                --bg-tertiary: #f1f5f9;
+                --text-primary: #0f172a;
+                --text-secondary: #334155;
+                --text-muted: #64748b;
+                --border-color: #e2e8f0;
+                --card-bg: #ffffff;
+                --code-bg: #0f172a;
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                font-family:
+                    "IBM Plex Mono", "JetBrains Mono", "Fira Code",
+                    "Cascadia Code", "SF Mono", "Monaco", "Inconsolata",
+                    "Roboto Mono", "Source Code Pro", monospace;
+                line-height: 1.6;
+                color: var(--text-primary);
+                background: var(--bg-primary);
+                transition:
+                    background-color 0.3s ease,
+                    color 0.3s ease;
+            }
+
+            /* Header */
+            header {
+                position: fixed;
+                top: 0;
+                width: 100%;
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(10px);
+                border-bottom: 1px solid var(--border-color);
+                z-index: 1000;
+                transition: all 0.3s ease;
+            }
+
+            [data-theme="light"] header {
+                background: rgba(255, 255, 255, 0.95);
+            }
+
+            nav {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 1rem 2rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+                font-weight: 900;
+                color: var(--text-primary);
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                transition: all 0.3s ease;
+            }
+
+            .logo-container {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .logo-svg {
+                height: 56px;
+                width: auto;
+                color: var(--primary);
+                transition: all 0.3s ease;
+                filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.3));
+            }
+
+            .logo:hover .logo-svg {
+                transform: scale(1.1);
+                filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.5));
+            }
+
+            .syntax-group {
+                animation: syntaxFloat 4s ease-in-out infinite;
+            }
+
+            .syntax-brace-open {
+                animation-delay: 0s;
+            }
+
+            .syntax-bracket-open {
+                animation-delay: 0.5s;
+            }
+
+            .syntax-bracket-close {
+                animation-delay: 1s;
+            }
+
+            .syntax-brace-close {
+                animation-delay: 1.5s;
+            }
+
+            @keyframes syntaxFloat {
+                0%,
+                100% {
+                    transform: translateY(0) scale(1);
+                    opacity: 1;
+                }
+                25% {
+                    transform: translateY(-2px) scale(1.1);
+                    opacity: 0.9;
+                }
+                50% {
+                    transform: translateY(0) scale(1.05);
+                    opacity: 1;
+                }
+                75% {
+                    transform: translateY(2px) scale(1.1);
+                    opacity: 0.9;
+                }
+            }
+
+            .logo:hover .syntax-group {
+                animation-duration: 1s;
+            }
+
+            .logo:hover .syntax-group path,
+            .logo:hover .syntax-group rect {
+                stroke: #8b5cf6;
+                filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
+            }
+
+            /* Theme-aware logo styling */
+            [data-theme="light"] .logo-svg {
+                color: var(--primary);
+                filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.2));
+            }
+
+            [data-theme="light"] .logo:hover .logo-svg {
+                filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.3));
+            }
+
+            /* Hero Logo Styles */
+            .hero-logo {
+                animation: fadeInUp 1s ease-out 0.3s both;
+            }
+
+            @keyframes heroSyntaxFloat {
+                0%,
+                100% {
+                    transform: translateY(0) scale(1);
+                    opacity: 0.9;
+                }
+                50% {
+                    transform: translateY(-5px) scale(1.05);
+                    opacity: 1;
+                }
+            }
+
+            nav a {
+                text-decoration: none;
+                color: var(--text-secondary);
+                font-weight: 500;
+                transition: color 0.3s;
+            }
+
+            nav a:hover {
+                color: var(--primary);
+                text-decoration: underline;
+            }
+
+            .nav-links {
+                display: flex;
+                gap: 2rem;
+                align-items: center;
+            }
+
+            .github-btn {
+                background: var(--bg-tertiary);
+                color: var(--text-primary) !important;
+                padding: 0.5rem 1rem;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                border: 1px solid var(--border-color);
+            }
+
+            .github-btn:hover {
+                background: var(--primary);
+                color: white !important;
+                border-color: var(--primary);
+            }
+
+            /* Theme Switcher */
+            .theme-switcher {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin-left: 1rem;
+            }
+
+            .theme-toggle {
+                background: var(--bg-tertiary);
+                border: 1px solid var(--border-color);
+                border-radius: 20px;
+                padding: 0.25rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                position: relative;
+                width: 50px;
+                height: 26px;
+            }
+
+            .theme-toggle:hover {
+                border-color: var(--primary);
+            }
+
+            .theme-toggle-slider {
+                width: 18px;
+                height: 18px;
+                background: var(--text-primary);
+                border-radius: 50%;
+                transition: transform 0.3s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+            }
+
+            [data-theme="light"] .theme-toggle-slider {
+                transform: translateX(24px);
+            }
+
+            .theme-icon {
+                font-size: 10px;
+                opacity: 0.8;
+            }
+
+            /* Hero Section */
+            .hero {
+                margin-top: 4rem;
+                background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                color: white;
+                padding: 8rem 2rem;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+
+            [data-theme="light"] .hero {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+
+            .hero::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+                opacity: 0.3;
+            }
+
+            [data-theme="light"] .hero::before {
+                background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+                opacity: 0.5;
+            }
+
+            .hero-content {
+                max-width: 900px;
+                margin: 0 auto;
+                position: relative;
+                z-index: 1;
+            }
+
+            .hero-badge {
+                display: inline-block;
+                background: rgba(255, 255, 255, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                padding: 0.5rem 1rem;
+                border-radius: 999px;
+                font-size: 0.875rem;
+                margin-bottom: 2rem;
+                font-family: "IBM Plex Mono", monospace;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+            }
+
+            h1 {
+                font-size: clamp(3rem, 10vw, 5rem);
+                font-weight: 700;
+                margin-bottom: 1rem;
+                line-height: 1.1;
+                animation: fadeInUp 1s ease-out 0.7s both;
+                font-family: "IBM Plex Mono", monospace;
+            }
+
+            .hero-subtitle {
+                font-size: 1.5rem;
+                opacity: 0.9;
+                margin-bottom: 1rem;
+                font-weight: 400;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                font-family: "IBM Plex Mono", monospace;
+            }
+
+            .hero-description {
+                font-size: 1.25rem;
+                opacity: 0.9;
+                margin-bottom: 2rem;
+                max-width: 1000px;
+                margin-left: auto;
+                margin-right: auto;
+                animation: fadeInUp 1s ease-out 1.1s both;
+            }
+
+            .cta-buttons {
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+                flex-wrap: wrap;
+                animation: fadeInUp 1s ease-out 1.3s both;
+            }
+
+            .btn {
+                padding: 0.875rem 2rem;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                transition: all 0.2s;
+            }
+
+            .btn-primary {
+                background: white;
+                color: var(--primary);
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            }
+
+            .btn-secondary {
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+
+            .btn-secondary:hover {
+                background: rgba(255, 255, 255, 0.3);
+            }
+
+            /* Code Preview */
+            .code-window {
+                max-width: 700px;
+                margin: 3rem auto 0;
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            }
+
+            .window-bar {
+                background: rgba(0, 0, 0, 0.2);
+                padding: 0.75rem 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .window-dot {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+            }
+
+            .dot-red {
+                background: #ff5f56;
+            }
+            .dot-yellow {
+                background: #ffbd2e;
+            }
+            .dot-green {
+                background: #27c93f;
+            }
+
+            .code-content {
+                padding: 2rem;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 0.95rem;
+                line-height: 1.7;
+                text-align: left;
+                overflow-x: auto;
+            }
+
+            .code-content pre {
+                margin: 0;
+                white-space: pre;
+            }
+
+            .code-content code {
+                color: #e2e8f0;
+                white-space: pre;
+            }
+
+            .comment {
+                color: #6a9955;
+            }
+            .property {
+                color: #9cdcfe;
+            }
+            .string {
+                color: #ce9178;
+            }
+            .number {
+                color: #b5cea8;
+            }
+            .boolean {
+                color: #569cd6;
+            }
+            .bracket {
+                color: #ffd700;
+            }
+
+            /* Stats */
+            .stats {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 2rem;
+                margin-top: 3rem;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 2rem;
+                border-radius: 12px;
+            }
+
+            .stat {
+                text-align: center;
+            }
+
+            .stat-number {
+                font-size: 2.5rem;
+                font-weight: 900;
+                display: block;
+            }
+
+            .stat-label {
+                font-size: 0.875rem;
+                opacity: 0.9;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            /* Visual Explanation */
+            .visual-explanation {
+                padding: 6rem 2rem;
+                max-width: 1200px;
+                margin: 0 auto;
+                background: var(--bg-primary);
+            }
+
+            .syntax-showcase {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 2rem;
+                margin-top: 3rem;
+            }
+
+            .syntax-card {
+                background: var(--card-bg);
+                border: 2px solid var(--border-color);
+                border-radius: 12px;
+                padding: 2rem;
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .syntax-card:hover {
+                border-color: var(--primary);
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(99, 102, 241, 0.15);
+            }
+
+            .syntax-card::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 4px;
+                background: linear-gradient(
+                    90deg,
+                    var(--primary),
+                    var(--secondary)
+                );
+                transform: scaleX(0);
+                transform-origin: left;
+                transition: transform 0.3s ease;
+            }
+
+            .syntax-card:hover::before {
+                transform: scaleX(1);
+            }
+
+            .syntax-label {
+                display: inline-block;
+                background: linear-gradient(
+                    135deg,
+                    var(--primary),
+                    var(--secondary)
+                );
+                color: white;
+                padding: 0.375rem 0.75rem;
+                border-radius: 6px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 1rem;
+            }
+
+            .syntax-example {
+                background: var(--code-bg);
+                color: #e2e8f0;
+                padding: 1.25rem;
+                border-radius: 8px;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 0.9rem;
+                line-height: 1.6;
+                margin-bottom: 1rem;
+                position: relative;
+                overflow: hidden;
+            }
+
+            [data-theme="light"] .syntax-example {
+                background: #f8fafc;
+                color: #475569;
+                border: 1px solid var(--border-color);
+            }
+
+            .syntax-example::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.1),
+                    transparent
+                );
+                animation: shimmer-slide 3s infinite;
+            }
+
+            @keyframes shimmer-slide {
+                0% {
+                    left: -100%;
+                }
+                50%,
+                100% {
+                    left: 100%;
+                }
+            }
+
+            .syntax-explanation {
+                color: var(--text-secondary);
+                font-size: 0.875rem;
+                line-height: 1.6;
+            }
+
+            .syntax-highlight-point {
+                display: flex;
+                align-items: start;
+                gap: 0.5rem;
+                margin-top: 0.75rem;
+                padding: 0.5rem;
+                background: var(--bg-tertiary);
+                border-radius: 6px;
+                font-size: 0.85rem;
+            }
+
+            .highlight-icon {
+                color: var(--primary);
+                font-size: 1rem;
+                margin-top: 0.1rem;
+            }
+
+            /* Interactive Demo */
+            .interactive-demo {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 4rem 2rem;
+                margin-top: 3rem;
+                border-radius: 16px;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .interactive-demo::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid2" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid2)"/></svg>');
+                opacity: 0.3;
+            }
+
+            .demo-content {
+                position: relative;
+                z-index: 1;
+                color: white;
+                text-align: center;
+            }
+
+            .token-flow {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 1rem;
+                flex-wrap: wrap;
+                margin: 2rem 0;
+            }
+
+            .token-box {
+                background: rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(10px);
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                padding: 1rem 1.5rem;
+                font-family: "JetBrains Mono", monospace;
+                font-weight: 600;
+                animation: float-token 3s ease-in-out infinite;
+            }
+
+            .token-box:nth-child(1) {
+                animation-delay: 0s;
+            }
+            .token-box:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+            .token-box:nth-child(3) {
+                animation-delay: 0.4s;
+            }
+            .token-box:nth-child(4) {
+                animation-delay: 0.6s;
+            }
+            .token-box:nth-child(5) {
+                animation-delay: 0.8s;
+            }
+
+            @keyframes float-token {
+                0%,
+                100% {
+                    transform: translateY(0px);
+                }
+                50% {
+                    transform: translateY(-10px);
+                }
+            }
+
+            .arrow-icon {
+                font-size: 1.5rem;
+                opacity: 0.7;
+                animation: pulse-arrow 2s ease-in-out infinite;
+            }
+
+            @keyframes pulse-arrow {
+                0%,
+                100% {
+                    opacity: 0.7;
+                    transform: scale(1);
+                }
+                50% {
+                    opacity: 1;
+                    transform: scale(1.1);
+                }
+            }
+
+            /* Features */
+            .features {
+                padding: 6rem 2rem;
+                max-width: 1200px;
+                margin: 0 auto;
+                background: var(--bg-primary);
+            }
+
+            .section-title {
+                font-size: clamp(2rem, 5vw, 3rem);
+                font-weight: 700;
+                text-align: center;
+                margin-bottom: 1rem;
+                color: var(--text-primary);
+                font-family: "IBM Plex Mono", monospace;
+            }
+
+            .section-subtitle {
+                text-align: center;
+                font-size: 1.125rem;
+                color: var(--text-secondary);
+                margin-bottom: 3rem;
+                opacity: 0.9;
+            }
+
+            .features-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 2rem;
+                margin-top: 3rem;
+            }
+
+            .feature-card {
+                background: var(--card-bg);
+                padding: 2rem;
+                border-radius: 12px;
+                border: 2px solid var(--border-color);
+                transition: all 0.3s ease;
+                text-align: center;
+            }
+
+            .feature-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 20px 60px rgba(99, 102, 241, 0.25);
+                border-color: var(--primary);
+            }
+
+            .feature-icon {
+                width: 50px;
+                height: 50px;
+                background: linear-gradient(
+                    135deg,
+                    var(--primary),
+                    var(--secondary)
+                );
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .feature-title {
+                font-size: 1.5rem;
+                font-weight: 700;
+                margin-bottom: 1rem;
+                color: var(--text-primary);
+                font-family: "IBM Plex Mono", monospace;
+            }
+
+            .feature-description {
+                color: var(--text-secondary);
+                line-height: 1.7;
+            }
+
+            /* CTA */
+            .cta {
+                background: linear-gradient(
+                    135deg,
+                    var(--primary) 0%,
+                    var(--secondary) 100%
+                );
+                color: white;
+                text-align: center;
+                padding: 6rem 2rem;
+            }
+
+            .cta h2 {
+                font-size: 2.5rem;
+                font-weight: 700;
+                margin-bottom: 1rem;
+                font-family: "IBM Plex Mono", monospace;
+            }
+
+            .cta p {
+                font-size: 1.25rem;
+                opacity: 0.9;
+                margin-bottom: 2rem;
+                font-family: "IBM Plex Mono", monospace;
+            }
+
+            /* Footer */
+            footer {
+                background: var(--bg-tertiary);
+                color: var(--text-primary);
+                padding: 2rem;
+                text-align: center;
+                border-top: 1px solid var(--border-color);
+            }
+
+            .footer-links {
+                display: flex;
+                gap: 2rem;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-bottom: 1.5rem;
+            }
+
+            .footer-links a {
+                color: rgba(255, 255, 255, 0.7);
+                text-decoration: none;
+            }
+
+            .footer-links a:hover {
+                color: var(--primary);
+            }
+
+            footer p {
+                opacity: 0.7;
+                font-size: 0.875rem;
+            }
+
+            /* Interactive Syntax Explorer */
+            .interactive-syntax {
+                padding: 6rem 2rem;
+                background: var(--light);
+            }
+
+            .interactive-syntax .section-title {
+                color: var(--dark);
+                -webkit-text-fill-color: var(--dark);
+            }
+
+            .interactive-syntax .section-subtitle {
+                color: var(--gray);
+            }
+
+            .syntax-playground-container {
+                max-width: 1400px;
+                margin: 0 auto;
+            }
+
+            .playground-wrapper {
+                display: grid;
+                grid-template-columns: 1.2fr 1fr;
+                gap: 2rem;
+                margin-top: 3rem;
+            }
+
+            .playground-editor {
+                background: var(--dark);
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+                border: 2px solid #e2e8f0;
+            }
+
+            .explanation-panel {
+                background: white;
+                border-radius: 12px;
+                padding: 2rem;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                border: 2px solid #e2e8f0;
+                min-height: 500px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .explanation-default {
+                text-align: center;
+            }
+
+            .explanation-icon {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+                animation: pointLeft 2s ease-in-out infinite;
+            }
+
+            @keyframes pointLeft {
+                0%,
+                100% {
+                    transform: translateX(0);
+                }
+                50% {
+                    transform: translateX(-10px);
+                }
+            }
+
+            .explanation-default h3 {
+                color: var(--dark);
+                margin-bottom: 0.5rem;
+            }
+
+            .explanation-default p {
+                color: var(--gray);
+                margin-bottom: 2rem;
+            }
+
+            .token-legend {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .legend-item {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem;
+                background: var(--light);
+                border-radius: 6px;
+                font-size: 0.875rem;
+            }
+
+            .legend-badge {
+                padding: 0.35rem 0.65rem;
+                border-radius: 4px;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 0.75rem;
+                font-weight: 600;
+            }
+
+            .legend-badge.comment-token {
+                color: #6a9955;
+                background: rgba(106, 153, 85, 0.2);
+                border: 1px solid rgba(106, 153, 85, 0.4);
+            }
+
+            .legend-badge.identifier-token {
+                color: #4a9cd6;
+                background: rgba(156, 220, 254, 0.2);
+                border: 1px solid rgba(156, 220, 254, 0.4);
+            }
+
+            .legend-badge.string-token {
+                color: #ce9178;
+                background: rgba(206, 145, 120, 0.2);
+                border: 1px solid rgba(206, 145, 120, 0.4);
+            }
+
+            .legend-badge.number-token {
+                color: #739e6a;
+                background: rgba(181, 206, 168, 0.2);
+                border: 1px solid rgba(181, 206, 168, 0.4);
+            }
+
+            .legend-badge.boolean-token {
+                color: #569cd6;
+                background: rgba(86, 156, 214, 0.2);
+                border: 1px solid rgba(86, 156, 214, 0.4);
+            }
+
+            .legend-badge.bracket-token {
+                color: #d4a400;
+                background: rgba(255, 215, 0, 0.2);
+                border: 1px solid rgba(255, 215, 0, 0.4);
+                font-weight: 700;
+            }
+
+            .interactive-token {
+                transition: all 0.2s;
+                border-radius: 3px;
+                padding: 2px 4px;
+                margin: 0 1px;
+                cursor: pointer;
+                display: inline-block;
+            }
+
+            .interactive-token:hover {
+                transform: scale(1.08);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+                z-index: 1;
+                position: relative;
+            }
+
+            /* Token Type Colors */
+            .comment-token {
+                color: #6a9955 !important;
+                background: rgba(106, 153, 85, 0.15);
+            }
+
+            .comment-token:hover {
+                background: rgba(106, 153, 85, 0.25);
+            }
+
+            .identifier-token {
+                color: #9cdcfe !important;
+                background: rgba(156, 220, 254, 0.15);
+            }
+
+            .identifier-token:hover {
+                background: rgba(156, 220, 254, 0.25);
+            }
+
+            .string-token {
+                color: #ce9178 !important;
+                background: rgba(206, 145, 120, 0.15);
+            }
+
+            .string-token:hover {
+                background: rgba(206, 145, 120, 0.25);
+            }
+
+            .number-token {
+                color: #b5cea8 !important;
+                background: rgba(181, 206, 168, 0.15);
+            }
+
+            .number-token:hover {
+                background: rgba(181, 206, 168, 0.25);
+            }
+
+            .boolean-token {
+                color: #569cd6 !important;
+                background: rgba(86, 156, 214, 0.15);
+            }
+
+            .boolean-token:hover {
+                background: rgba(86, 156, 214, 0.25);
+            }
+
+            .bracket-token {
+                color: #ffd700 !important;
+                background: rgba(255, 215, 0, 0.15);
+                font-weight: 700;
+            }
+
+            .bracket-token:hover {
+                background: rgba(255, 215, 0, 0.25);
+            }
+
+            .interactive-token.active {
+                animation: pulse-highlight 0.6s;
+            }
+
+            @keyframes pulse-highlight {
+                0%,
+                100% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.1);
+                }
+            }
+
+            .explanation-content {
+                animation: slideIn 0.3s ease-out;
+            }
+
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateX(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+
+            .explanation-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1.5rem;
+                padding-bottom: 1rem;
+                border-bottom: 2px solid var(--light);
+            }
+
+            .explanation-header h3 {
+                color: var(--dark);
+                font-size: 1.5rem;
+            }
+
+            .close-btn {
+                background: var(--light);
+                border: none;
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                cursor: pointer;
+                font-size: 1.25rem;
+                color: var(--gray);
+                transition: all 0.2s;
+            }
+
+            .close-btn:hover {
+                background: var(--danger);
+                color: white;
+            }
+
+            .info-box {
+                background: var(--light);
+                padding: 1.5rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+                border-left: 4px solid var(--primary);
+            }
+
+            .info-box h4 {
+                color: var(--primary);
+                margin-bottom: 0.75rem;
+                font-size: 1rem;
+            }
+
+            .info-box ul {
+                margin-left: 1.25rem;
+                color: var(--gray);
+            }
+
+            .info-box li {
+                margin: 0.5rem 0;
+                line-height: 1.6;
+            }
+
+            .code-example {
+                margin-top: 1.5rem;
+            }
+
+            .code-example strong {
+                display: block;
+                color: var(--dark);
+                margin-bottom: 0.5rem;
+            }
+
+            .code-example pre {
+                background: var(--dark);
+                padding: 1rem;
+                border-radius: 6px;
+                overflow-x: auto;
+            }
+
+            .code-example code {
+                color: #e2e8f0;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 0.875rem;
+                line-height: 1.6;
+            }
+
+            /* Railroad Diagrams */
+            .railroad-section {
+                padding: 6rem 2rem;
+                background: var(--bg-primary);
+            }
+
+            .railroad-container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .railroad-grid {
+                display: grid;
+                gap: 3rem;
+                margin-top: 3rem;
+            }
+
+            .railroad-item {
+                background: var(--card-bg);
+                border-radius: 16px;
+                padding: 2rem;
+                border: 2px solid var(--border-color);
+                transition: all 0.3s ease;
+                opacity: 0;
+                transform: translateY(30px);
+                animation: fadeInUp 0.8s ease-out forwards;
+            }
+
+            .railroad-item:nth-child(1) {
+                animation-delay: 0.1s;
+            }
+            .railroad-item:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+            .railroad-item:nth-child(3) {
+                animation-delay: 0.3s;
+            }
+            .railroad-item:nth-child(4) {
+                animation-delay: 0.4s;
+            }
+            .railroad-item:nth-child(5) {
+                animation-delay: 0.5s;
+            }
+            .railroad-item:nth-child(6) {
+                animation-delay: 0.6s;
+            }
+
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .railroad-item:hover {
+                border-color: var(--primary);
+                box-shadow: 0 10px 30px rgba(99, 102, 241, 0.15);
+                transform: translateY(-5px);
+            }
+
+            .railroad-header {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .railroad-number {
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(
+                    135deg,
+                    var(--primary),
+                    var(--secondary)
+                );
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 1.25rem;
+                animation: pulse 2s infinite;
+            }
+
+            @keyframes pulse {
+                0%,
+                100% {
+                    transform: scale(1);
+                    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+                }
+                50% {
+                    transform: scale(1.05);
+                    box-shadow: 0 0 20px 10px rgba(99, 102, 241, 0);
+                }
+            }
+
+            .railroad-title {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: var(--text-primary);
+                font-family: "IBM Plex Mono", monospace;
+            }
+
+            .railroad-visual {
+                background: var(--bg-secondary);
+                padding: 2rem;
+                border-radius: 8px;
+                border: 2px solid var(--border-color);
+                margin-bottom: 1.5rem;
+                overflow-x: auto;
+            }
+
+            .railroad-track {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                min-height: 60px;
+                position: relative;
+            }
+
+            .railroad-track::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 50%;
+                height: 3px;
+                background: var(--primary);
+                z-index: 0;
+                opacity: 0.3;
+            }
+
+            .rail-node {
+                background: var(--card-bg);
+                border: 3px solid var(--primary);
+                padding: 0.75rem 1.5rem;
+                border-radius: 8px;
+                font-family: "IBM Plex Mono", monospace;
+                font-weight: 600;
+                color: var(--primary);
+                position: relative;
+                z-index: 1;
+                white-space: nowrap;
+                box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+                transition: all 0.2s ease;
+            }
+
+            .rail-node:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            }
+
+            .rail-node.terminal {
+                background: var(--primary);
+                color: white;
+            }
+
+            .rail-node.optional {
+                border-style: dashed;
+                opacity: 0.7;
+            }
+
+            .rail-arrow {
+                color: var(--primary);
+                font-size: 1.5rem;
+                font-weight: 700;
+                z-index: 1;
+                position: relative;
+                animation: pulse-arrow 2s ease-in-out infinite;
+            }
+
+            @keyframes pulse-arrow {
+                0%,
+                100% {
+                    transform: scale(1);
+                    opacity: 0.8;
+                }
+                50% {
+                    transform: scale(1.2);
+                    opacity: 1;
+                }
+            }
+
+            .rail-branch {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                position: relative;
+                z-index: 1;
+            }
+
+            .rail-branch-line {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .railroad-description {
+                color: var(--text-secondary);
+                line-height: 1.8;
+                font-size: 1rem;
+                animation: fadeInDescription 0.6s ease-out 0.8s both;
+            }
+
+            @keyframes fadeInDescription {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .railroad-example {
+                background: var(--code-bg);
+                color: #e2e8f0;
+                padding: 1.25rem;
+                border-radius: 12px;
+                font-family: "IBM Plex Mono", monospace;
+                font-size: 0.9rem;
+                line-height: 1.7;
+                margin-top: 1rem;
+                border: 1px solid var(--border-color);
+                position: relative;
+                overflow: hidden;
+                letter-spacing: 0.2px;
+            }
+
+            [data-theme="light"] .railroad-example {
+                color: #475569;
+                background: #f8fafc;
+                border: 1px solid #cbd5e1;
+            }
+
+            .code-line {
+                margin: 0.25rem 0;
+                animation: fadeInLine 0.6s ease-out forwards;
+                opacity: 0;
+            }
+
+            .code-line:nth-child(1) {
+                animation-delay: 0.1s;
+            }
+            .code-line:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+            .code-line:nth-child(3) {
+                animation-delay: 0.3s;
+            }
+            .code-line:nth-child(4) {
+                animation-delay: 0.4s;
+            }
+            .code-line:nth-child(5) {
+                animation-delay: 0.5s;
+            }
+            .code-line:nth-child(6) {
+                animation-delay: 0.6s;
+            }
+            .code-line:nth-child(7) {
+                animation-delay: 0.7s;
+            }
+            .code-line:nth-child(8) {
+                animation-delay: 0.8s;
+            }
+            .code-line:nth-child(9) {
+                animation-delay: 0.9s;
+            }
+            .code-line:nth-child(10) {
+                animation-delay: 1s;
+            }
+
+            .code-indent {
+                padding-left: 2rem;
+            }
+
+            .code-empty {
+                height: 0.5rem;
+            }
+
+            @keyframes fadeInLine {
+                from {
+                    opacity: 0;
+                    transform: translateX(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+
+            .railroad-example-label {
+                font-weight: 600;
+                margin: 1rem 0 0.5rem 0;
+                color: var(--primary);
+                font-size: 0.875rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                opacity: 0.9;
+                font-family: "IBM Plex Mono", monospace;
+            }
+
+            /* Responsive */
+            @media (max-width: 768px) {
+                .nav-links {
+                    display: none;
+                }
+
+                h1 {
+                    font-size: 2.5rem;
+                }
+
+                .hero {
+                    padding: 4rem 1rem;
+                }
+
+                .features,
+                .cta {
+                    padding: 4rem 1rem;
+                }
+
+                .stats {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+                .playground-wrapper {
+                    grid-template-columns: 1fr;
+                }
+
+                .token-legend {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <a href="#" class="logo">
+                    <div class="logo-container">
+                        <svg
+                            class="logo-svg"
+                            viewBox="0 0 80 40"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <!-- Background circles for depth -->
+                            <circle
+                                cx="40"
+                                cy="20"
+                                r="18"
+                                fill="url(#logoGradient)"
+                                opacity="0.1"
+                            />
+                            <circle
+                                cx="40"
+                                cy="20"
+                                r="14"
+                                fill="url(#logoGradient)"
+                                opacity="0.2"
+                            />
+
+                            <!-- Syntax symbols with modern styling -->
+                            <g class="syntax-group">
+                                <!-- Curly brace { -->
+                                <g class="syntax-brace-open">
+                                    <path
+                                        d="M18 8 Q15 8 15 11 L15 16 Q15 19 12 19 Q15 19 15 22 L15 27 Q15 30 18 30"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </g>
+
+                                <!-- Square bracket [ -->
+                                <g class="syntax-bracket-open">
+                                    <path
+                                        d="M26 9 Q24 9 24 11 L24 27 Q24 29 26 29 L30 29"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                    />
+                                    <path
+                                        d="M26 9 L30 9"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                    />
+                                </g>
+
+                                <!-- Square bracket ] -->
+                                <g class="syntax-bracket-close">
+                                    <path
+                                        d="M54 9 Q56 9 56 11 L56 27 Q56 29 54 29 L50 29"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                    />
+                                    <path
+                                        d="M54 9 L50 9"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                    />
+                                </g>
+
+                                <!-- Curly brace } -->
+                                <g class="syntax-brace-close">
+                                    <path
+                                        d="M62 8 Q65 8 65 11 L65 16 Q65 19 68 19 Q65 19 65 22 L65 27 Q65 30 62 30"
+                                        stroke="currentColor"
+                                        stroke-width="3.2"
+                                        fill="none"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </g>
+                            </g>
+
+                            <!-- Gradient definition -->
+                            <defs>
+                                <linearGradient
+                                    id="logoGradient"
+                                    x1="0%"
+                                    y1="0%"
+                                    x2="100%"
+                                    y2="100%"
+                                >
+                                    <stop
+                                        offset="0%"
+                                        style="
+                                            stop-color: #6366f1;
+                                            stop-opacity: 1;
+                                        "
+                                    />
+                                    <stop
+                                        offset="100%"
+                                        style="
+                                            stop-color: #8b5cf6;
+                                            stop-opacity: 1;
+                                        "
+                                    />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <span
+                            style="
+                                font-family:
+                                    &quot;IBM Plex Mono&quot;, monospace;
+                                font-weight: 700;
+                                font-size: 1.2rem;
+                                margin-left: 0.5rem;
+                            "
+                            >VIBE</span
+                        >
+                    </div>
+                </a>
+                <div class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#railroad">Grammar</a>
+                    <a href="specification.html">Docs</a>
+                    <a href="https://github.com/1ay1/vibe" class="github-btn">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                </div>
+                <div class="theme-switcher">
+                    <div class="theme-toggle" onclick="toggleTheme()">
+                        <div class="theme-toggle-slider">
+                            <span class="theme-icon">🌙</span>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <div class="hero-content">
+                <div class="hero-badge">✨ Pass the vibe check</div>
+
+                <!-- Hero Logo -->
+                <div
+                    class="hero-logo"
+                    style="
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin-bottom: 2rem;
+                    "
+                >
+                    <svg
+                        viewBox="0 0 80 40"
+                        xmlns="http://www.w3.org/2000/svg"
+                        style="
+                            height: 140px;
+                            width: auto;
+                            filter: drop-shadow(
+                                0 4px 20px rgba(99, 102, 241, 0.4)
+                            );
+                        "
+                    >
+                        <!-- Background glow effect -->
+                        <circle
+                            cx="40"
+                            cy="20"
+                            r="18"
+                            fill="url(#heroGradient)"
+                            opacity="0.15"
+                        />
+                        <circle
+                            cx="40"
+                            cy="20"
+                            r="14"
+                            fill="url(#heroGradient)"
+                            opacity="0.25"
+                        />
+
+                        <!-- Syntax symbols with larger size -->
+                        <g
+                            class="syntax-group"
+                            style="
+                                animation: heroSyntaxFloat 6s ease-in-out
+                                    infinite;
+                            "
+                        >
+                            <!-- Curly brace { -->
+                            <path
+                                d="M18 8 Q15 8 15 11 L15 16 Q15 19 12 19 Q15 19 15 22 L15 27 Q15 30 18 30"
+                                stroke="white"
+                                stroke-width="4"
+                                fill="none"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                opacity="0.9"
+                            />
+
+                            <!-- Square bracket [ -->
+                            <path
+                                d="M26 9 Q24 9 24 11 L24 27 Q24 29 26 29 L30 29"
+                                stroke="white"
+                                stroke-width="4"
+                                fill="none"
+                                stroke-linecap="round"
+                            />
+                            <path
+                                d="M26 9 L30 9"
+                                stroke="white"
+                                stroke-width="4"
+                                fill="none"
+                                stroke-linecap="round"
+                            />
+
+                            <!-- Square bracket ] -->
+                            <path
+                                d="M54 9 Q56 9 56 11 L56 27 Q56 29 54 29 L50 29"
+                                stroke="white"
+                                stroke-width="4"
+                                fill="none"
+                                stroke-linecap="round"
+                            />
+                            <path
+                                d="M54 9 L50 9"
+                                stroke="white"
+                                stroke-width="4"
+                                fill="none"
+                                stroke-linecap="round"
+                            />
+
+                            <!-- Curly brace } -->
+                            <path
+                                d="M62 8 Q65 8 65 11 L65 16 Q65 19 68 19 Q65 19 65 22 L65 27 Q65 30 62 30"
+                                stroke="white"
+                                stroke-width="4"
+                                fill="none"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                opacity="0.9"
+                            />
+                        </g>
+
+                        <!-- Gradient definition -->
+                        <defs>
+                            <linearGradient
+                                id="heroGradient"
+                                x1="0%"
+                                y1="0%"
+                                x2="100%"
+                                y2="100%"
+                            >
+                                <stop
+                                    offset="0%"
+                                    style="stop-color: #6366f1; stop-opacity: 1"
+                                />
+                                <stop
+                                    offset="100%"
+                                    style="stop-color: #8b5cf6; stop-opacity: 1"
+                                />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <h1
+                        style="
+                            font-family: &quot;IBM Plex Mono&quot;, monospace;
+                            font-weight: 700;
+                            font-size: clamp(3rem, 10vw, 5rem);
+                            margin: 0 0 0 0.75rem;
+                        "
+                    >
+                        VIBE
+                    </h1>
+                </div>
+
+                <p class="hero-subtitle">Values In Bracket Expression</p>
+                <p class="hero-description">
+                    Configuration that actually makes sense. No YAML indentation
+                    nightmares. No JSON comma catastrophes. Just clean, readable
+                    config.
+                </p>
+
+                <div class="cta-buttons">
+                    <a href="specification.html" class="btn btn-primary">
+                        <i class="fas fa-book"></i> Read Docs
+                    </a>
+                    <a
+                        href="https://github.com/1ay1/vibe"
+                        class="btn btn-secondary"
+                    >
+                        <i class="fab fa-github"></i> View on GitHub
+                    </a>
+                </div>
+
+                <div class="code-window">
+                    <div class="window-bar">
+                        <div class="window-dot dot-red"></div>
+                        <div class="window-dot dot-yellow"></div>
+                        <div class="window-dot dot-green"></div>
+                    </div>
+                    <div class="code-content">
+                        <pre><code><span class="comment"># Your config file 🚀</span>
+    <span class="property">app</span> <span class="bracket">{</span>
+      <span class="property">name</span> <span class="string">"My Awesome App"</span>
+      <span class="property">version</span> <span class="number">2.1.0</span>
+      <span class="property">debug</span> <span class="boolean">false</span>
+
+      <span class="property">database</span> <span class="bracket">{</span>
+        <span class="property">host</span> <span class="string">db.example.com</span>
+        <span class="property">port</span> <span class="number">5432</span>
+        <span class="property">ssl</span> <span class="boolean">true</span>
+      <span class="bracket">}</span>
+
+      <span class="property">servers</span> <span class="bracket">[</span><span class="string">web1</span> <span class="string">web2</span> <span class="string">api</span><span class="bracket">]</span>
+    <span class="bracket">}</span></code></pre>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-number">5</div>
+                        <div class="stat-label">Data Types</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Reserved Words</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">1</div>
+                        <div class="stat-label">Pass Parsing</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Human Readable</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="visual-explanation">
+            <h2 class="section-title">How VIBE Works</h2>
+            <p class="section-subtitle">Simple syntax rules that make sense</p>
+
+            <div class="syntax-showcase">
+                <div class="syntax-card">
+                    <div class="syntax-label">Assignment</div>
+                    <div class="syntax-example">
+                        <pre><span class="property">key</span> <span class="string">value</span></pre>
+                    </div>
+                    <div class="syntax-explanation">
+                        Simple key-value pairs separated by whitespace
+                        <div class="syntax-highlight-point">
+                            <i class="fas fa-check-circle highlight-icon"></i>
+                            <span
+                                >No colons, equals signs, or commas needed</span
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="syntax-card">
+                    <div class="syntax-label">Objects</div>
+                    <div class="syntax-example">
+                        <pre><span class="property">config</span> <span class="bracket">{</span>
+  <span class="property">key</span> <span class="string">value</span>
+<span class="bracket">}</span></pre>
+                    </div>
+                    <div class="syntax-explanation">
+                        Nested structures using curly braces
+                        <div class="syntax-highlight-point">
+                            <i class="fas fa-check-circle highlight-icon"></i>
+                            <span>Visual hierarchy is immediately clear</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="syntax-card">
+                    <div class="syntax-label">Arrays</div>
+                    <div class="syntax-example">
+                        <pre><span class="property">items</span> <span class="bracket">[</span><span class="string">one</span> <span class="string">two</span> <span class="string">three</span><span class="bracket">]</span></pre>
+                    </div>
+                    <div class="syntax-explanation">
+                        Space-separated values in square brackets
+                        <div class="syntax-highlight-point">
+                            <i class="fas fa-check-circle highlight-icon"></i>
+                            <span>No commas, no dashes, just clean lists</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="syntax-card">
+                    <div class="syntax-label">Comments</div>
+                    <div class="syntax-example">
+                        <pre><span class="comment"># Full line comment</span>
+<span class="property">port</span> <span class="number">8080</span> <span class="comment"># Inline</span></pre>
+                    </div>
+                    <div class="syntax-explanation">
+                        Hash symbol starts comments anywhere
+                        <div class="syntax-highlight-point">
+                            <i class="fas fa-check-circle highlight-icon"></i>
+                            <span>Document freely without breaking syntax</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="syntax-card">
+                    <div class="syntax-label">Types</div>
+                    <div class="syntax-example">
+                        <pre><span class="property">count</span> <span class="number">42</span>
+<span class="property">price</span> <span class="number">19.99</span>
+<span class="property">enabled</span> <span class="boolean">true</span>
+<span class="property">name</span> <span class="string">"text"</span></pre>
+                    </div>
+                    <div class="syntax-explanation">
+                        Smart automatic type inference
+                        <div class="syntax-highlight-point">
+                            <i class="fas fa-check-circle highlight-icon"></i>
+                            <span>Numbers, booleans, strings just work</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="syntax-card">
+                    <div class="syntax-label">Nesting</div>
+                    <div class="syntax-example">
+                        <pre><span class="property">app</span> <span class="bracket">{</span>
+  <span class="property">db</span> <span class="bracket">{</span>
+    <span class="property">host</span> <span class="string">localhost</span>
+  <span class="bracket">}</span>
+<span class="bracket">}</span></pre>
+                    </div>
+                    <div class="syntax-explanation">
+                        Unlimited nesting depth for complex configs
+                        <div class="syntax-highlight-point">
+                            <i class="fas fa-check-circle highlight-icon"></i>
+                            <span>Indentation is visual, not syntactic</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="interactive-demo">
+                <div class="demo-content">
+                    <h3
+                        style="
+                            font-size: 2rem;
+                            font-weight: 800;
+                            margin-bottom: 1rem;
+                        "
+                    >
+                        Just 5 Token Types
+                    </h3>
+                    <p
+                        style="
+                            font-size: 1.125rem;
+                            opacity: 0.9;
+                            margin-bottom: 2rem;
+                        "
+                    >
+                        Everything in VIBE uses these simple building blocks
+                    </p>
+
+                    <div class="token-flow">
+                        <div class="token-box">IDENTIFIER</div>
+                        <div class="token-box">STRING</div>
+                        <div class="token-box">{ }</div>
+                        <div class="token-box">[ ]</div>
+                        <div class="token-box"># comment</div>
+                    </div>
+
+                    <p style="font-size: 1rem; opacity: 0.85; margin-top: 2rem">
+                        That's it. No colons, no equals, no commas, no
+                        semicolons.<br />
+                        <strong
+                            >Simple syntax = Fast parsing = Happy
+                            developers</strong
+                        >
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="features" id="features">
+            <h2 class="section-title">Why VIBE?</h2>
+            <p class="section-subtitle">
+                Configuration that finally feels right
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3 class="feature-title">Minimal Syntax</h3>
+                    <p class="feature-description">
+                        Just 5 token types. No commas, semicolons, or complex
+                        punctuation. Natural whitespace separation keeps it
+                        clean.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3 class="feature-title">Smart Types</h3>
+                    <p class="feature-description">
+                        Automatic type inference. Numbers look like numbers,
+                        booleans are obvious. No explicit declarations needed.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-comment"></i>
+                    </div>
+                    <h3 class="feature-title">Comments Anywhere</h3>
+                    <p class="feature-description">
+                        Full-line or inline # comments. Document your config
+                        without special syntax or breaking structure.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 class="feature-title">Lightning Fast</h3>
+                    <p class="feature-description">
+                        Single-pass O(n) parsing. Over 100 MB/s with minimal
+                        memory overhead. Simple state machine, no backtracking.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h3 class="feature-title">Visual Clarity</h3>
+                    <p class="feature-description">
+                        Structure is instantly obvious. Braces create clear
+                        boundaries. Indentation is visual-only, not syntactic.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h3 class="feature-title">Unicode Ready</h3>
+                    <p class="feature-description">
+                        Full UTF-8 support in strings and comments. ASCII
+                        identifiers ensure maximum speed and compatibility.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="railroad-section" id="railroad">
+            <div class="railroad-container">
+                <h2 class="section-title">VIBE Grammar Railroad Diagrams</h2>
+                <p class="section-subtitle">
+                    Visual guide to VIBE syntax structure
+                </p>
+
+                <div class="railroad-grid">
+                    <!-- Assignment -->
+                    <div class="railroad-item">
+                        <div class="railroad-header">
+                            <div class="railroad-number">1</div>
+                            <h3 class="railroad-title">Assignment</h3>
+                        </div>
+                        <div class="railroad-visual">
+                            <div class="railroad-track">
+                                <div class="rail-node terminal">identifier</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node terminal">value</div>
+                            </div>
+                        </div>
+                        <p class="railroad-description">
+                            A simple key-value pair. The identifier (key) is
+                            followed by a value, separated by whitespace. No
+                            colons, equals signs, or other separators needed.
+                        </p>
+                        <div class="railroad-example-label">Example:</div>
+                        <div class="railroad-example">
+                            <div class="code-line">
+                                <span class="property">host</span>
+                                <span class="string">localhost</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="property">port</span>
+                                <span class="number">8080</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="property">enabled</span>
+                                <span class="boolean">true</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Object -->
+                    <div class="railroad-item">
+                        <div class="railroad-header">
+                            <div class="railroad-number">2</div>
+                            <h3 class="railroad-title">Object</h3>
+                        </div>
+                        <div class="railroad-visual">
+                            <div class="railroad-track">
+                                <div class="rail-node terminal">identifier</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node terminal">{</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node">statements</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node terminal">}</div>
+                            </div>
+                        </div>
+                        <p class="railroad-description">
+                            Objects group related configuration. They start with
+                            an identifier, followed by an opening brace {,
+                            contain statements (assignments, nested objects, or
+                            arrays), and end with a closing brace }.
+                        </p>
+                        <div class="railroad-example-label">Example:</div>
+                        <div class="railroad-example">
+                            <div class="code-line">
+                                <span class="property">database</span>
+                                <span class="bracket">{</span>
+                            </div>
+                            <div class="code-line code-indent">
+                                <span class="property">host</span>
+                                <span class="string">localhost</span>
+                            </div>
+                            <div class="code-line code-indent">
+                                <span class="property">port</span>
+                                <span class="number">5432</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="bracket">}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Array -->
+                    <div class="railroad-item">
+                        <div class="railroad-header">
+                            <div class="railroad-number">3</div>
+                            <h3 class="railroad-title">Array</h3>
+                        </div>
+                        <div class="railroad-visual">
+                            <div class="railroad-track">
+                                <div class="rail-node terminal">identifier</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node terminal">[</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node">value</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node optional">value...</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node terminal">]</div>
+                            </div>
+                        </div>
+                        <p class="railroad-description">
+                            Arrays hold multiple values of the same or different
+                            types. Values are separated by whitespace (no
+                            commas!). Arrays can be inline or multi-line.
+                        </p>
+                        <div class="railroad-example-label">Example:</div>
+                        <div class="railroad-example">
+                            <div class="code-line">
+                                <span class="property">ports</span>
+                                <span class="bracket">[</span
+                                ><span class="number">80</span>
+                                <span class="number">443</span>
+                                <span class="number">8080</span
+                                ><span class="bracket">]</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="property">hosts</span>
+                                <span class="bracket">[</span>
+                            </div>
+                            <div class="code-line code-indent">
+                                <span class="string">web1.example.com</span>
+                            </div>
+                            <div class="code-line code-indent">
+                                <span class="string">web2.example.com</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="bracket">]</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Value Types -->
+                    <div class="railroad-item">
+                        <div class="railroad-header">
+                            <div class="railroad-number">4</div>
+                            <h3 class="railroad-title">Value Types</h3>
+                        </div>
+                        <div class="railroad-visual">
+                            <div class="rail-branch">
+                                <div class="rail-branch-line">
+                                    <div class="rail-node">string</div>
+                                    <span style="color: var(--gray)"
+                                        >unquoted or "quoted"</span
+                                    >
+                                </div>
+                                <div class="rail-branch-line">
+                                    <div class="rail-node">number</div>
+                                    <span style="color: var(--gray)"
+                                        >42 or 3.14</span
+                                    >
+                                </div>
+                                <div class="rail-branch-line">
+                                    <div class="rail-node">boolean</div>
+                                    <span style="color: var(--gray)"
+                                        >true or false</span
+                                    >
+                                </div>
+                                <div class="rail-branch-line">
+                                    <div class="rail-node">object</div>
+                                    <span style="color: var(--gray)"
+                                        >{ ... }</span
+                                    >
+                                </div>
+                                <div class="rail-branch-line">
+                                    <div class="rail-node">array</div>
+                                    <span style="color: var(--gray)"
+                                        >[ ... ]</span
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                        <p class="railroad-description">
+                            VIBE supports five value types with automatic
+                            inference: strings (quoted or unquoted), numbers
+                            (integers and floats), booleans (true/false), nested
+                            objects, and arrays.
+                        </p>
+                        <div class="railroad-example-label">Example:</div>
+                        <div class="railroad-example">
+                            <div class="code-line">
+                                <span class="property">name</span>
+                                <span class="string">"John Doe"</span>
+                                <span class="comment"># quoted string</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="property">url</span>
+                                <span class="string">example.com</span>
+                                <span class="comment"># unquoted string</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="property">count</span>
+                                <span class="number">42</span>
+                                <span class="comment"># integer</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="property">price</span>
+                                <span class="number">19.99</span>
+                                <span class="comment"># float</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="property">active</span>
+                                <span class="boolean">true</span>
+                                <span class="comment"># boolean</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comments -->
+                    <div class="railroad-item">
+                        <div class="railroad-header">
+                            <div class="railroad-number">5</div>
+                            <h3 class="railroad-title">Comments</h3>
+                        </div>
+                        <div class="railroad-visual">
+                            <div class="railroad-track">
+                                <div class="rail-node terminal">#</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node">
+                                    any text until end of line
+                                </div>
+                            </div>
+                        </div>
+                        <p class="railroad-description">
+                            Comments start with # and continue to the end of the
+                            line. They can appear on their own line or after any
+                            value. Comments are not preserved in the parsed
+                            output.
+                        </p>
+                        <div class="railroad-example-label">Example:</div>
+                        <div class="railroad-example">
+                            <div class="code-line">
+                                <span class="comment"
+                                    ># This is a full-line comment</span
+                                >
+                            </div>
+                            <div class="code-line">
+                                <span class="property">port</span>
+                                <span class="number">8080</span>
+                                <span class="comment"
+                                    ># This is an inline comment</span
+                                >
+                            </div>
+                            <div class="code-line">
+                                <span class="comment"
+                                    ># Comments can contain émojis 🚀 and
+                                    Unicode!</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Complete Structure -->
+                    <div class="railroad-item">
+                        <div class="railroad-header">
+                            <div class="railroad-number">6</div>
+                            <h3 class="railroad-title">Complete VIBE File</h3>
+                        </div>
+                        <div class="railroad-visual">
+                            <div class="railroad-track">
+                                <div class="rail-node optional">comment</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node">statement</div>
+                                <div class="rail-arrow">→</div>
+                                <div class="rail-node optional">
+                                    statement...
+                                </div>
+                            </div>
+                        </div>
+                        <p class="railroad-description">
+                            A VIBE file consists of zero or more statements.
+                            Each statement can be an assignment, an object
+                            definition, an array definition, or a comment.
+                            Statements are separated by newlines.
+                        </p>
+                        <div class="railroad-example-label">Example:</div>
+                        <div class="railroad-example">
+                            <div class="code-line">
+                                <span class="comment"
+                                    ># Application configuration</span
+                                >
+                            </div>
+                            <div class="code-line">
+                                <span class="property">app_name</span>
+                                <span class="string">"My App"</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="property">version</span>
+                                <span class="number">1.0</span>
+                            </div>
+                            <div class="code-line code-empty"></div>
+                            <div class="code-line">
+                                <span class="property">server</span>
+                                <span class="bracket">{</span>
+                            </div>
+                            <div class="code-line code-indent">
+                                <span class="property">host</span>
+                                <span class="string">localhost</span>
+                            </div>
+                            <div class="code-line code-indent">
+                                <span class="property">port</span>
+                                <span class="number">8080</span>
+                            </div>
+                            <div class="code-line">
+                                <span class="bracket">}</span>
+                            </div>
+                            <div class="code-line code-empty"></div>
+                            <div class="code-line">
+                                <span class="property">features</span>
+                                <span class="bracket">[</span
+                                ><span class="string">auth</span>
+                                <span class="string">api</span>
+                                <span class="string">web</span
+                                ><span class="bracket">]</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta">
+            <h2>Ready to Feel the VIBE?</h2>
+            <p>Join developers who choose clarity over complexity</p>
+            <div class="cta-buttons">
+                <a href="specification.html" class="btn btn-primary">
+                    <i class="fas fa-book"></i> Full Specification
+                </a>
+                <a
+                    href="https://github.com/1ay1/vibe"
+                    class="btn btn-secondary"
+                >
+                    <i class="fab fa-github"></i> Star on GitHub
+                </a>
+            </div>
+        </section>
+
+        <footer>
+            <div class="footer-links">
+                <a href="specification.html">Documentation</a>
+                <a href="https://github.com/1ay1/vibe">GitHub</a>
+                <a href="https://github.com/1ay1/vibe/issues">Issues</a>
+                <a href="https://github.com/1ay1/vibe/releases">Releases</a>
+            </div>
+            <p>
+                &copy; 2025 VIBE Project. MIT Licensed. Keep calm and VIBE on 🌊
+            </p>
+        </footer>
+
+        <script>
+            // Smooth scroll
+            document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+                anchor.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(
+                        this.getAttribute("href"),
+                    );
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                        });
+                    }
+                });
+            });
+
+            // Header scroll effect
+            let lastScroll = 0;
+            window.addEventListener("scroll", () => {
+                const header = document.querySelector("header");
+                const currentScroll = window.pageYOffset;
+
+                if (currentScroll > 100) {
+                    header.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+                } else {
+                    header.style.boxShadow = "none";
+                }
+
+                lastScroll = currentScroll;
+            });
+
+            // Theme switching functionality
+            function toggleTheme() {
+                const html = document.documentElement;
+                const currentTheme = html.getAttribute("data-theme");
+                const newTheme = currentTheme === "light" ? null : "light";
+
+                if (newTheme) {
+                    html.setAttribute("data-theme", newTheme);
+                    localStorage.setItem("theme", newTheme);
+                } else {
+                    html.removeAttribute("data-theme");
+                    localStorage.setItem("theme", "dark");
+                }
+
+                updateThemeIcon();
+            }
+
+            function updateThemeIcon() {
+                const themeIcon = document.querySelector(".theme-icon");
+                const currentTheme =
+                    document.documentElement.getAttribute("data-theme");
+                themeIcon.textContent = currentTheme === "light" ? "☀️" : "🌙";
+            }
+
+            // Initialize theme on page load
+            document.addEventListener("DOMContentLoaded", () => {
+                const savedTheme = localStorage.getItem("theme");
+
+                if (savedTheme === "light") {
+                    document.documentElement.setAttribute(
+                        "data-theme",
+                        "light",
+                    );
+                } else {
+                    // Default to dark theme
+                    document.documentElement.removeAttribute("data-theme");
+                }
+
+                updateThemeIcon();
+            });
+        </script>
+    </body>
+</html>
