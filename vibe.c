@@ -205,7 +205,6 @@ static void skip_comment(VibeParser* parser) {
 }
 
 static char* parse_quoted_string(VibeParser* parser) {
-    const char* start = parser->input + parser->pos;
     parser->pos++; /* Skip opening quote */
     parser->column++;
     
@@ -328,14 +327,26 @@ static Token next_token(VibeParser* parser) {
             c = parser->input[parser->pos];
         }
         
-        /* Collect identifier or number */
+        /* Collect characters for identifier/string/number */
         while (parser->pos < parser->length) {
             c = parser->input[parser->pos];
-            if (is_unquoted_string_char(c)) {
-                parser->pos++;
-                parser->column++;
+            
+            /* For potential identifiers, use strict identifier rules */
+            if (is_identifier_start(start[0])) {
+                if (is_identifier_char(c)) {
+                    parser->pos++;
+                    parser->column++;
+                } else {
+                    break;
+                }
             } else {
-                break;
+                /* For other tokens (numbers, strings), use unquoted string rules */
+                if (is_unquoted_string_char(c)) {
+                    parser->pos++;
+                    parser->column++;
+                } else {
+                    break;
+                }
             }
         }
         

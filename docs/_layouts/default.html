@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+            name="description"
+            content="{{ page.description | default: site.description }}"
+        />
+        <title>{{ page.title | default: site.title }}</title>
+
+        <!-- Favicon -->
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            href="{{ '/assets/favicon.svg' | relative_url }}"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            href="{{ '/assets/favicon.png' | relative_url }}"
+        />
+
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@300;400;500;600&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- CSS -->
+        <link
+            rel="stylesheet"
+            href="{{ '/assets/css/style.css' | relative_url }}"
+        />
+
+        <!-- Syntax highlighting -->
+        <link
+            rel="stylesheet"
+            href="{{ '/assets/css/syntax.css' | relative_url }}"
+        />
+
+        <!-- SEO -->
+        {% seo %}
+
+        <!-- Open Graph -->
+        <meta
+            property="og:title"
+            content="{{ page.title | default: site.title }}"
+        />
+        <meta
+            property="og:description"
+            content="{{ page.description | default: site.description }}"
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="{{ page.url | absolute_url }}" />
+        <meta
+            property="og:image"
+            content="{{ '/assets/images/vibe-og.png' | absolute_url }}"
+        />
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+            name="twitter:title"
+            content="{{ page.title | default: site.title }}"
+        />
+        <meta
+            name="twitter:description"
+            content="{{ page.description | default: site.description }}"
+        />
+        <meta
+            name="twitter:image"
+            content="{{ '/assets/images/vibe-og.png' | absolute_url }}"
+        />
+    </head>
+    <body>
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <a href="{{ '/' | relative_url }}" class="brand-link">
+                        <span class="brand-logo">VIBE</span>
+                        <span class="brand-text">Configuration Language</span>
+                    </a>
+                </div>
+
+                <div class="nav-menu" id="nav-menu">
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a
+                                href="{{ '/' | relative_url }}"
+                                class="nav-link {% if page.url == '/' %}active{% endif %}"
+                                >Home</a
+                            >
+                        </li>
+                        <li class="nav-item">
+                            <a
+                                href="{{ '/specification/' | relative_url }}"
+                                class="nav-link {% if page.url contains '/specification' %}active{% endif %}"
+                                >Specification</a
+                            >
+                        </li>
+                        <li class="nav-item">
+                            <a
+                                href="{{ '/examples/' | relative_url }}"
+                                class="nav-link {% if page.url contains '/examples' %}active{% endif %}"
+                                >Examples</a
+                            >
+                        </li>
+                        <li class="nav-item">
+                            <a
+                                href="{{ site.vibe.repo_url }}"
+                                class="nav-link external"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                <span>GitHub</span>
+                                <svg
+                                    width="16</span>"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M18 13V19C18 19.5523 17.5523 20 17 20H5C4.44772 20 4 19.5523 4 19V7C4 6.44772 4.44772 6 5 6H11M15 3H21V9M10 14L21 3"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                </svg>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="nav-actions">
+                        <a
+                            href="{{ site.vibe.download_url }}"
+                            class="btn btn-primary btn-sm"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            Download v{{ site.vibe.version }}
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-toggle" id="nav-toggle">
+                    <span class="nav-toggle-line"></span>
+                    <span class="nav-toggle-line"></span>
+                    <span class="nav-toggle-line"></span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Breadcrumb -->
+                {% unless page.url == '/' %}
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <ol class="breadcrumb-list">
+                        <li class="breadcrumb-item">
+                            <a href="{{ '/' | relative_url }}">Home</a>
+                        </li>
+                        {% assign path_parts = page.url | split: '/' %} {%
+                        assign path = '' %} {% for part in path_parts %} {%
+                        unless part == '' %} {% assign path = path | append: '/'
+                        | append: part %} {% unless forloop.last %}
+                        <li class="breadcrumb-item">
+                            <a href="{{ path }}">{{ part | capitalize }}</a>
+                        </li>
+                        {% else %}
+                        <li class="breadcrumb-item active" aria-current="page">
+                            {{ page.title | default: part | capitalize }}
+                        </li>
+                        {% endunless %} {% endunless %} {% endfor %}
+                    </ol>
+                </nav>
+                {% endunless %}
+
+                <!-- Page Content -->
+                <div class="content">{{ content }}</div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h3 class="footer-title">VIBE</h3>
+                        <p class="footer-description">
+                            {{ site.vibe.tagline }}
+                        </p>
+                        <div class="footer-links">
+                            <a
+                                href="https://github.com/1ay1/vibe"
+                                target="_blank"
+                                rel="noopener"
+                                class="footer-link"
+                            >
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                >
+                                    <path
+                                        d="M12 0C5.374 0 0 5.373 0 12 0 17.302 3.438 21.8 8.207 23.387c.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"
+                                    />
+                                </svg>
+                                GitHub
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="footer-section">
+                        <h4 class="footer-subtitle">Documentation</h4>
+                        <ul class="footer-menu">
+                            <li>
+                                <a href="{{ '/specification/' | relative_url }}"
+                                    >Specification</a
+                                >
+                            </li>
+                            <li>
+                                <a href="{{ '/examples/' | relative_url }}"
+                                    >Examples</a
+                                >
+                            </li>
+                            <li>
+                                <a href="{{ '/api/' | relative_url }}"
+                                    >API Reference</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-section">
+                        <h4 class="footer-subtitle">Community</h4>
+                        <ul class="footer-menu">
+                            <li>
+                                <a
+                                    href="https://github.com/1ay1/vibe/discussions"
+                                    target="_blank"
+                                    >Discussions</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="https://github.com/1ay1/vibe/issues"
+                                    target="_blank"
+                                    >Issues</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="https://github.com/1ay1/vibe/blob/main/CONTRIBUTING.md"
+                                    target="_blank"
+                                    >Contributing</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-section">
+                        <h4 class="footer-subtitle">Resources</h4>
+                        <ul class="footer-menu">
+                            <li>
+                                <a
+                                    href="https://github.com/1ay1/vibe/releases"
+                                    target="_blank"
+                                    >Download</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="https://github.com/1ay1/vibe/releases"
+                                    target="_blank"
+                                    >Releases</a
+                                >
+                            </li>
+                            <li>
+                                <a
+                                    href="https://github.com/1ay1/vibe/blob/main/LICENSE"
+                                    target="_blank"
+                                    >License</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="footer-bottom">
+                    <p class="footer-copyright">
+                        © {{ 'now' | date: "%Y" }} VIBE Configuration Language.
+                        Released under the
+                        <a
+                            href="https://github.com/1ay1/vibe/blob/main/LICENSE"
+                            target="_blank"
+                            >MIT License</a
+                        >.
+                    </p>
+                    <p class="footer-version">
+                        Version {{ site.vibe.version }}
+                    </p>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Back to Top Button -->
+        <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+            <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+            >
+                <polyline points="18,15 12,9 6,15"></polyline>
+            </svg>
+        </button>
+
+        <!-- JavaScript -->
+        <script>
+            // Mobile navigation toggle
+            const navToggle = document.getElementById("nav-toggle");
+            const navMenu = document.getElementById("nav-menu");
+
+            navToggle.addEventListener("click", () => {
+                navMenu.classList.toggle("active");
+                navToggle.classList.toggle("active");
+            });
+
+            // Close mobile menu when clicking outside
+            document.addEventListener("click", (e) => {
+                if (
+                    !navToggle.contains(e.target) &&
+                    !navMenu.contains(e.target)
+                ) {
+                    navMenu.classList.remove("active");
+                    navToggle.classList.remove("active");
+                }
+            });
+
+            // Back to top button
+            const backToTop = document.getElementById("back-to-top");
+
+            window.addEventListener("scroll", () => {
+                if (window.pageYOffset > 300) {
+                    backToTop.classList.add("visible");
+                } else {
+                    backToTop.classList.remove("visible");
+                }
+            });
+
+            backToTop.addEventListener("click", () => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            });
+
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+                anchor.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(
+                        this.getAttribute("href"),
+                    );
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                        });
+                    }
+                });
+            });
+
+            // Copy code blocks
+            document.querySelectorAll("pre code").forEach((block) => {
+                const button = document.createElement("button");
+                button.className = "copy-button";
+                button.textContent = "Copy";
+                button.addEventListener("click", async () => {
+                    await navigator.clipboard.writeText(block.textContent);
+                    button.textContent = "Copied!";
+                    setTimeout(() => {
+                        button.textContent = "Copy";
+                    }, 2000);
+                });
+                block.parentNode.appendChild(button);
+            });
+        </script>
+
+        <!-- Analytics -->
+        {% if jekyll.environment == 'production' and site.google_analytics %}
+        <script
+            async
+            src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics }}"
+        ></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag("js", new Date());
+            gtag("config", "{{ site.google_analytics }}");
+        </script>
+        {% endif %}
+    </body>
+</html>

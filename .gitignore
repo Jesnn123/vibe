@@ -1,3 +1,5 @@
+# Ignore different environment folders
+*_env
 # Compiled Object files
 *.o
 *.obj
