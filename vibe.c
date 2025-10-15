@@ -1,4 +1,13 @@
-/* strdup is POSIX, need feature test macro before headers */
+/*
+ * VIBE Parser Implementation
+ * 
+ * This file does all the heavy lifting - tokenizing, parsing, building the value tree.
+ * The approach is pretty straightforward: read characters, turn them into tokens,
+ * then build a tree structure from those tokens.
+ */
+
+// We use strdup which is POSIX, not standard C
+// This macro tells the compiler we want POSIX features
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #endif
@@ -10,52 +19,60 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-/* Configuration */
+// How deep can we nest? 64 levels should be plenty
+// (if you need more than this, your config is probably too complex)
 #define MAX_NESTING_DEPTH 64
+
+// Start with space for 16 items, grow as needed
 #define INITIAL_CAPACITY 16
 
-/* Token types */
+// Tokens are the "words" we recognize while scanning the input
+// Think of this like breaking a sentence into words and punctuation
 typedef enum {
-    TOKEN_EOF = 0,
-    TOKEN_IDENTIFIER,
-    TOKEN_STRING,
-    TOKEN_NUMBER,
-    TOKEN_BOOLEAN,
-    TOKEN_LEFT_BRACE,
-    TOKEN_RIGHT_BRACE,
-    TOKEN_LEFT_BRACKET,
-    TOKEN_RIGHT_BRACKET,
-    TOKEN_NEWLINE,
-    TOKEN_ERROR
+    TOKEN_EOF = 0,          // End of file - we're done
+    TOKEN_IDENTIFIER,       // Names like 'port', 'database', 'server'
+    TOKEN_STRING,           // Quoted text: "hello world"
+    TOKEN_NUMBER,           // Anything numeric: 42, 3.14, -7
+    TOKEN_BOOLEAN,          // Just 'true' or 'false'
+    TOKEN_LEFT_BRACE,       // { - starts an object
+    TOKEN_RIGHT_BRACE,      // } - ends an object
+    TOKEN_LEFT_BRACKET,     // [ - starts an array
+    TOKEN_RIGHT_BRACKET,    // ] - ends an array
+    TOKEN_NEWLINE,          // Line breaks matter in VIBE
+    TOKEN_ERROR             // Something went wrong
 } TokenType;
 
+// A token is a piece of text we recognized, with location info for errors
 typedef struct {
-    TokenType type;
-    char* value;
-    int line;
-    int column;
+    TokenType type;         // What kind of token is this?
+    char* value;            // The actual text (NULL for punctuation)
+    int line;               // Where did we find it?
+    int column;             // Exact position for error messages
 } Token;
 
-/* Parser state */
+// While parsing, we need to track what context we're in
+// Are we at the top level? Inside an object? Inside an array?
 typedef enum {
-    STATE_ROOT,
-    STATE_OBJECT,
-    STATE_ARRAY,
-    STATE_VALUE
+    STATE_ROOT,             // Top level of the file
+    STATE_OBJECT,           // Inside a { } block
+    STATE_ARRAY,            // Inside a [ ] block
+    STATE_VALUE             // Expecting a value
 } ParseState;
 
+// Each nesting level needs to remember what it's building
 typedef struct {
-    ParseState state;
-    VibeValue* container;
-    char* current_key;
+    ParseState state;       // What context are we in?
+    VibeValue* container;   // The object/array we're filling
+    char* current_key;      // For objects, the last key we saw
 } StateFrame;
 
+// Stack to track nesting - push when we enter {[, pop when we exit ]}
 typedef struct {
     StateFrame frames[MAX_NESTING_DEPTH];
-    int depth;
+    int depth;              // How deep are we nested right now?
 } ParseStack;
 
-/* Helper functions */
+// Forward declarations for all our helper functions
 static void set_error(VibeParser* parser, const char* fmt, ...);
 static bool is_identifier_start(char c);
 static bool is_identifier_char(char c);
@@ -68,7 +85,9 @@ static Token next_token(VibeParser* parser);
 static void token_free(Token* token);
 static VibeValue* parse_value_from_token(Token* token);
 
-/* ===== Parser Lifecycle ===== */
+/* ============================================================================
+ * Parser Setup and Teardown
+ * ============================================================================ */
 
 VibeParser* vibe_parser_new(void) {
     VibeParser* parser = calloc(1, sizeof(VibeParser));
@@ -184,6 +203,8 @@ static char* strdup_range(const char* start, const char* end) {
 
 /* ===== Lexer ===== */
 
+// Skip over whitespace (but not newlines - those matter in VIBE!)
+// Spaces, tabs, and carriage returns are just ignored
 static void skip_whitespace(VibeParser* parser) {
     while (parser->pos < parser->length) {
         char c = parser->input[parser->pos];
@@ -191,11 +212,13 @@ static void skip_whitespace(VibeParser* parser) {
             parser->pos++;
             parser->column++;
         } else {
-            break;
+            break;  // Hit something interesting
         }
     }
 }
 
+// Skip from # to the end of the line
+// Comments are just for humans, parser doesn't care about them
 static void skip_comment(VibeParser* parser) {
     if (parser->pos < parser->length && parser->input[parser->pos] == '#') {
         while (parser->pos < parser->length && parser->input[parser->pos] != '\n') {

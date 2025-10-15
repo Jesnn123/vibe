@@ -64,6 +64,36 @@ cd vibe
 make
 ```
 
+### 🎮 Interactive Parsing Tool
+
+VIBE includes a powerful **interactive parsing tool** with a beautiful TUI (Terminal User Interface) that visualizes the parsing process step-by-step:
+
+```bash
+make parser_tool
+./vibe_parser_tool examples/simple.vibe
+```
+
+**Features:**
+- 📊 Real-time visualization of parsing steps
+- 🎯 Current line highlighting with yellow background
+- 🔍 Token stream analysis with color-coded types
+- 📚 Interactive VIBE spec tutorial that teaches as you parse
+- 🔄 API call tracing with detailed parameters and results
+- 💾 Memory and performance statistics
+- ⏮️ Step forward/backward navigation
+- 🎨 Modern card-based UI with ASCII art
+
+**Keyboard Controls:**
+- `SPACE/N` - Step forward
+- `B` - Step backward
+- `Shift+B` - Fast backward (rewind to start)
+- `F` - Fast forward (jump to end)
+- `P` - Play/Pause auto-play mode
+- `R` - Reset to beginning
+- `Q` - Quit
+
+Perfect for learning VIBE syntax, debugging configs, and understanding how the parser works!
+
 ### Basic Usage
 
 **Step 1:** Create a VIBE config file (`config.vibe`):

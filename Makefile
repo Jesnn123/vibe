@@ -5,16 +5,19 @@ LDFLAGS =
 # Targets
 TARGET = vibe_example
 TEST_TARGET = vibe_test
+PARSER_TOOL_TARGET = vibe_parser_tool
 
 # Source files
 VIBE_SRC = vibe.c
 EXAMPLE_SRC = examples/example.c
 TEST_SRC = tests/test.c
+PARSER_TOOL_SRC = vibe_parser_tool.c
 
 # Object files
 VIBE_OBJ = vibe.o
 EXAMPLE_OBJ = examples/example.o
 TEST_OBJ = tests/test.o
+PARSER_TOOL_OBJ = vibe_parser_tool.o
 
 # Headers
 HEADERS = vibe.h
@@ -22,9 +25,21 @@ HEADERS = vibe.h
 # Example VIBE files
 EXAMPLES = examples/simple.vibe examples/config.vibe examples/web_server.vibe examples/database.vibe
 
-.PHONY: all clean test test-suite demo run help install
+.PHONY: all clean test test-suite demo run help install parser_tool
 
 all: $(TARGET)
+
+# Build parsing tool
+parser_tool: $(PARSER_TOOL_TARGET)
+
+$(PARSER_TOOL_TARGET): $(VIBE_OBJ) $(PARSER_TOOL_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $^ -lncurses -lpanel
+	@echo "✓ VIBE Parser Tool built successfully!"
+	@echo ""
+	@echo "Run with: ./$(PARSER_TOOL_TARGET) examples/simple.vibe"
+
+$(PARSER_TOOL_OBJ): $(PARSER_TOOL_SRC) $(HEADERS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Build example program
 $(TARGET): $(VIBE_OBJ) $(EXAMPLE_OBJ)
@@ -82,9 +97,9 @@ demo: all
 	@./$(TARGET) examples/simple.vibe
 
 clean:
-	rm -f $(VIBE_OBJ) $(EXAMPLE_OBJ) $(TEST_OBJ)
+	rm -f $(VIBE_OBJ) $(EXAMPLE_OBJ) $(TEST_OBJ) $(PARSER_TOOL_OBJ)
 	rm -f examples/*.o
-	rm -f $(TARGET) $(TEST_TARGET)
+	rm -f $(TARGET) $(TEST_TARGET) $(PARSER_TOOL_TARGET)
 	rm -f *.gcov *.gcda *.gcno
 	rm -f libvibe.a
 
@@ -93,6 +108,7 @@ help:
 	@echo ""
 	@echo "Targets:"
 	@echo "  all          Build the example program (default)"
+	@echo "  parser_tool  Build interactive parsing tool (requires ncurses)"
 	@echo "  test         Run example file tests"
 	@echo "  test-suite   Run comprehensive test suite"
 	@echo "  test-all     Run all tests (examples + suite)"
@@ -104,10 +120,12 @@ help:
 	@echo ""
 	@echo "Examples:"
 	@echo "  make                    # Build"
+	@echo "  make parser_tool        # Build parsing tool"
 	@echo "  make test               # Test with example files"
 	@echo "  make test-suite         # Run unit tests"
 	@echo "  make test-all           # Run all tests"
 	@echo "  ./vibe_example examples/config.vibe"
+	@echo "  ./vibe_parser_tool examples/simple.vibe  # Interactive TUI"
 	@echo "  ./vibe_test             # Run test suite directly"
 
 # Install to system (optional)
