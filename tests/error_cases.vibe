@@ -1,0 +1,44 @@
+# Error Test Cases
+# These should be moved to separate files for individual testing
+
+# Valid cases for baseline
+valid_string "hello world"
+valid_number 42
+valid_bool true
+
+# Test unicode in comments
+# Unicode: 你好世界 🌍
+
+# Test unicode in quoted strings
+unicode_value "Hello 世界 🌊"
+
+# Test paths
+path1 /usr/local/bin
+path2 /etc/ssl/cert.pem
+path3 ./relative/path
+path4 ../parent/dir
+
+# Test various number formats
+int_positive 42
+int_negative -17
+int_zero 0
+float_positive 3.14
+float_negative -2.5
+float_zero 0.0
+
+# Test empty structures
+empty_object {}
+empty_array []
+
+# Test deeply nested structures
+level1 {
+  level2 {
+    level3 {
+      level4 {
+        level5 {
+          deep_value "I'm nested deep!"
+        }
+      }
+    }
+  }
+}

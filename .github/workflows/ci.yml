@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        compiler: [gcc, clang]
+        exclude:
+          - os: macos-latest
+            compiler: gcc
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up compiler
+      run: |
+        if [ "${{ matrix.compiler }}" = "gcc" ]; then
+          echo "CC=gcc" >> $GITHUB_ENV
+        else
+          echo "CC=clang" >> $GITHUB_ENV
+        fi
+
+    - name: Build
+      run: make clean && make
+
+    - name: Run tests
+      run: make test
+
+    - name: Test examples
+      run: |
+        ./vibe_example examples/simple.vibe
+        ./vibe_example examples/config.vibe
+        ./vibe_example examples/web_server.vibe
+        ./vibe_example examples/database.vibe
+
+  memory-check:
+    name: Memory Check (Valgrind)
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install Valgrind
+      run: sudo apt-get update && sudo apt-get install -y valgrind
+
+    - name: Build
+      run: make clean && make
+
+    - name: Run Valgrind
+      run: |
+        valgrind --leak-check=full --error-exitcode=1 --track-origins=yes \
+          ./vibe_example examples/simple.vibe
+        valgrind --leak-check=full --error-exitcode=1 --track-origins=yes \
+          ./vibe_example examples/config.vibe
+
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Build with extra warnings
+      run: |
+        make clean
+        CFLAGS="-Wall -Wextra -Werror -pedantic -std=c11" make
+
+  code-coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install coverage tools
+      run: sudo apt-get update && sudo apt-get install -y gcovr
+
+    - name: Build with coverage
+      run: |
+        make clean
+        CFLAGS="-Wall -Wextra -std=c11 -g -fprofile-arcs -ftest-coverage" \
+        LDFLAGS="-lgcov" make
+
+    - name: Run tests
+      run: |
+        ./vibe_example examples/simple.vibe
+        ./vibe_example examples/config.vibe
+        ./vibe_example examples/web_server.vibe
+        ./vibe_example examples/database.vibe
+
+    - name: Generate coverage report
+      run: |
+        gcovr -r . --html --html-details -o coverage.html
+        gcovr -r . --xml -o coverage.xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false

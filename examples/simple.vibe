@@ -1,0 +1,12 @@
+# Simple test file
+name "Simple Config"
+version 1.0
+enabled true
+count 42
+
+server {
+  host localhost
+  port 3000
+}
+
+tags [api web backend]

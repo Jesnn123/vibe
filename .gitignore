@@ -1,0 +1,115 @@
+# Compiled Object files
+*.o
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+vibe_example
+vibe_test
+a.out
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Build directories
+build/
+dist/
+bin/
+obj/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+
+# Autotools
+.deps/
+.libs/
+Makefile.in
+aclocal.m4
+autom4te.cache/
+compile
+config.guess
+config.h
+config.h.in
+config.log
+config.status
+config.sub
+configure
+depcomp
+install-sh
+libtool
+ltmain.sh
+m4/
+missing
+stamp-h1
+
+# Package files
+*.tar.gz
+*.zip
+*.7z
+
+# Core dumps
+core
+core.*
+vgcore.*
+
+# Valgrind
+*.valgrind
+*.memcheck
+
+# Test output
+test_output/
+*.test
+*.log
+
+# Coverage files
+*.gcov
+*.gcda
+*.gcno
+coverage/

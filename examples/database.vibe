@@ -1,0 +1,150 @@
+# Database Configuration
+# PostgreSQL cluster setup
+
+primary {
+  host db-primary.internal
+  port 5432
+  database production_db
+  username app_user
+  password_file /run/secrets/db_password
+
+  # Connection pooling
+  pool {
+    min_connections 10
+    max_connections 100
+    idle_timeout 300
+    connection_lifetime 1800
+    validation_query "SELECT 1"
+  }
+
+  # Performance tuning
+  performance {
+    shared_buffers 256MB
+    effective_cache_size 1GB
+    work_mem 16MB
+    maintenance_work_mem 128MB
+    max_parallel_workers 4
+  }
+}
+
+# Read replicas
+replicas [
+  {
+    host db-replica-1.internal
+    port 5432
+    lag_threshold 1000
+    weight 1
+  }
+  {
+    host db-replica-2.internal
+    port 5432
+    lag_threshold 1000
+    weight 1
+  }
+  {
+    host db-replica-3.internal
+    port 5432
+    lag_threshold 1000
+    weight 2
+  }
+]
+
+# Backup configuration
+backup {
+  enabled true
+  schedule "0 2 * * *"
+  retention_days 30
+
+  destination {
+    type s3
+    bucket db-backups
+    region us-west-2
+    encryption true
+  }
+
+  # Point-in-time recovery
+  wal_archiving {
+    enabled true
+    archive_mode on
+    archive_timeout 300
+  }
+}
+
+# Migration settings
+migrations {
+  enabled true
+  auto_migrate false
+  directory /app/migrations
+  table schema_migrations
+
+  # Migration safety
+  lock_timeout 10
+  statement_timeout 60
+
+  # Rollback strategy
+  rollback {
+    enabled true
+    backup_before_migration true
+  }
+}
+
+# Monitoring and alerts
+monitoring {
+  slow_query_log {
+    enabled true
+    threshold 1000
+    file /var/log/postgresql/slow-queries.log
+  }
+
+  metrics {
+    enabled true
+    export_interval 60
+
+    endpoints [
+      prometheus
+      datadog
+    ]
+  }
+
+  alerts {
+    connection_pool_exhaustion {
+      threshold 90
+      severity critical
+    }
+
+    replication_lag {
+      threshold 5000
+      severity warning
+    }
+
+    disk_usage {
+      threshold 85
+      severity warning
+    }
+  }
+}
+
+# Security settings
+security {
+  ssl {
+    enabled true
+    mode require
+    cert_file /etc/ssl/certs/postgresql.crt
+    key_file /etc/ssl/private/postgresql.key
+  }
+
+  # Access control
+  allowed_hosts [
+    10.0.0.0/8
+    172.16.0.0/12
+    192.168.0.0/16
+  ]
+
+  # Audit logging
+  audit {
+    enabled true
+    log_connections true
+    log_disconnections true
+    log_statement all
+  }
+}

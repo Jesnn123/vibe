@@ -1,0 +1,140 @@
+# Web Server Configuration
+# Example VIBE configuration for a web server
+
+server {
+  name "Production Web Server"
+  bind_address 0.0.0.0
+  port 8080
+  worker_processes 4
+  max_connections 10000
+
+  ssl {
+    enabled true
+    port 8443
+    certificate /etc/ssl/certs/server.crt
+    private_key /etc/ssl/private/server.key
+    protocols [TLSv1.2 TLSv1.3]
+
+    # Perfect Forward Secrecy
+    prefer_server_ciphers true
+    session_timeout 300
+  }
+
+  timeouts {
+    client_header 60
+    client_body 60
+    send 60
+    keepalive 65
+  }
+}
+
+# Virtual hosts configuration
+vhosts [
+  {
+    domain example.com
+    root /var/www/example.com
+    index index.html
+
+    access_log /var/log/nginx/example.com.access.log
+    error_log /var/log/nginx/example.com.error.log
+  }
+  {
+    domain api.example.com
+    root /var/www/api
+    proxy_pass http://backend:3000
+
+    access_log /var/log/nginx/api.access.log
+    error_log /var/log/nginx/api.error.log
+  }
+]
+
+# Logging configuration
+logging {
+  level info
+  format json
+
+  access {
+    enabled true
+    path /var/log/web/access.log
+    buffer_size 64kb
+    flush_interval 10
+  }
+
+  error {
+    enabled true
+    path /var/log/web/error.log
+    include_trace true
+  }
+}
+
+# Rate limiting
+rate_limit {
+  enabled true
+
+  rules [
+    {
+      path "/api/*"
+      requests_per_second 100
+      burst 20
+    }
+    {
+      path "/login"
+      requests_per_second 5
+      burst 2
+    }
+  ]
+}
+
+# CORS settings
+cors {
+  enabled true
+  allowed_origins [
+    https://example.com
+    https://app.example.com
+  ]
+  allowed_methods [GET POST PUT DELETE OPTIONS]
+  allowed_headers [Content-Type Authorization]
+  max_age 86400
+}
+
+# Compression
+compression {
+  enabled true
+  types [
+    text/html
+    text/css
+    application/javascript
+    application/json
+  ]
+  level 6
+  min_length 1000
+}
+
+# Static file caching
+cache {
+  enabled true
+  max_age 3600
+
+  rules [
+    {
+      pattern "*.css"
+      max_age 86400
+    }
+    {
+      pattern "*.js"
+      max_age 86400
+    }
+    {
+      pattern "*.jpg"
+      max_age 604800
+    }
+  ]
+}
+
+# Health check endpoint
+health {
+  enabled true
+  path /health
+  interval 30
+  timeout 5
+}

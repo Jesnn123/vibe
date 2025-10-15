@@ -1,0 +1,61 @@
+# Sample VIBE configuration file
+# This demonstrates the basic features of the VIBE format
+
+application {
+  name "My Application"
+  version 1.0
+  debug false
+  environment production
+}
+
+server {
+  host localhost
+  port 8080
+
+  ssl {
+    enabled true
+    cert_path /etc/ssl/cert.pem
+    key_path /etc/ssl/key.pem
+  }
+
+  timeouts {
+    read 30
+    write 30
+    idle 120
+  }
+}
+
+database {
+  driver postgresql
+  host db.example.com
+  port 5432
+  name myapp_db
+  username db_user
+
+  pool {
+    min_connections 5
+    max_connections 20
+    idle_timeout 300
+  }
+}
+
+# List of server addresses
+servers [
+  prod1.example.com
+  prod2.example.com
+  prod3.example.com
+]
+
+# Feature flags
+features {
+  new_ui true
+  beta_api false
+  analytics true
+}
+
+# Simple array values
+ports [8080 8081 8082]
+environments [development staging production]
+
+# Mixed types in arrays
+mixed_array [42 "hello" true 3.14]
