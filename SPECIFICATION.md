@@ -72,11 +72,11 @@ Optimized for human reading and writing, with meaningful error messages and forg
 ```
 config        = { statement } ;
 statement     = ( assignment | object | array | comment ) [ comment ] newline ;
-assignment    = identifier value ;
+assignment    = identifier ( scalar_value | object | array ) ;
 object        = identifier "{" { statement } "}" ;
 array         = identifier "[" [ value_list ] "]" ;
-value_list    = value { ( whitespace | newline ) value } ;
-value         = string | number | boolean | identifier ;
+value_list    = scalar_value { ( whitespace | newline ) scalar_value } ;
+scalar_value  = string | number | boolean | identifier ;
 comment       = "#" { any_char - newline } ;
 identifier    = ( letter | "_" ) { letter | digit | "_" | "-" } ;
 string        = quoted_string | unquoted_string ;
@@ -157,7 +157,7 @@ DIGIT     = [0-9]
 ALNUM     = ALPHA | DIGIT
 IDENT_START = ALPHA | "_"
 IDENT_CHAR  = ALNUM | "_" | "-"
-UNQUOTED_CHAR = ALNUM | "_" | "-" | "." | "/" | ":"
+UNQUOTED_CHAR = [0x21-0x7E] - [{}[]#] - WHITESPACE
 WHITESPACE = " " | "\t" | "\r"
 NEWLINE   = "\n"
 ```
@@ -263,13 +263,14 @@ Strings come in two forms: quoted and unquoted.
 
 #### Unquoted Strings
 
-**Valid Characters**: `[a-zA-Z0-9_-./:]`
+**Valid Characters**: Any non-whitespace ASCII character (0x21-0x7E, excluding space, tab, newline, carriage return)
 
 **Rules**:
-- Must contain only ASCII characters (single-byte, 0x00-0x7F)
+- Must contain only non-whitespace ASCII characters (0x21-0x7E)
 - Cannot start with a digit if the entire value looks like a number
 - Cannot be `true` or `false` (would be interpreted as boolean)
-- Stops at first whitespace or special character
+- Stops at first whitespace character (space, tab, newline, carriage return)
+- Cannot contain structural characters when they would be ambiguous: `{`, `}`, `[`, `]`, `#`
 - Unicode characters require quoted strings
 
 **Examples**:
@@ -277,12 +278,21 @@ Strings come in two forms: quoted and unquoted.
 hostname server1.example.com
 path /usr/local/bin
 protocol https
+url https://api.example.com/v1
+email user@example.com
 port_name 8080  # String, not number, because of underscore
+password s3cr3t!@#$%^&*()
+connection_string postgres://user:pass@host:5432/db
 
-# Unicode values must be quoted (ASCII identifiers only)
+# Unicode values must be quoted
 language "中文"
 protocol "сервер"
 port "データベース"
+
+# Structural characters must be quoted when ambiguous
+config_with_braces "{\"key\": \"value\"}"
+array_syntax "[1, 2, 3]"
+comment_text "This contains # a hash"
 ```
 
 #### Quoted Strings
@@ -309,15 +319,48 @@ mixed_special "配置 # with comment char"
 
 ### Array Type
 
-**Definition**: Ordered collection of values of any type
+**Definition**: Ordered collection of scalar values (integers, floats, booleans, strings)
 
 **Syntax**: Values separated by whitespace, enclosed in `[]`
+
+**Restrictions**:
+- Arrays can only contain scalar values (no nested objects or arrays)
+- All values are parsed independently as primitives
+- Use named objects instead of object arrays for complex data
 
 **Examples**:
 ```
 numbers [1 2 3]
 strings [hello world foo]
 mixed [42 "hello" true 3.14]
+hosts [server1.com server2.com server3.com]
+flags [enabled debug verbose]
+```
+
+**Invalid** (objects in arrays not allowed):
+```
+# This is NOT valid VIBE syntax
+servers [
+  {
+    host server1.com
+    port 8080
+  }
+]
+```
+
+**Use this pattern instead**:
+```
+# Use named objects for complex data
+servers {
+  primary {
+    host server1.com
+    port 8080
+  }
+  secondary {
+    host server2.com
+    port 8081
+  }
+}
 ```
 
 ### Object Type

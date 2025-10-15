@@ -1,12 +1,60 @@
-# Simple test file
-name "Simple Config"
-version 1.0
-enabled true
-count 42
+# Simple VIBE Configuration Example
+# This file demonstrates basic VIBE syntax and features
 
-server {
+# Simple key-value pairs
+name "My Application"
+version 1.0
+debug true
+port 8080
+max_connections 1000
+
+# Nested object
+database {
   host localhost
-  port 3000
+  port 5432
+  name myapp_db
+  username admin
+  timeout 30
 }
 
-tags [api web backend]
+# Simple array
+allowed_ips [
+  127.0.0.1
+  192.168.1.100
+  10.0.0.1
+]
+
+# Array of strings
+features [
+  authentication
+  logging
+  caching
+  monitoring
+]
+
+# Mixed object with different types
+server {
+  name "Production Server"
+  enabled true
+  threads 4
+  memory_limit 512MB
+
+  # Nested object
+  ssl {
+    enabled false
+    port 8443
+  }
+}
+
+# Configuration sections
+logging {
+  level info
+  file /var/log/app.log
+  rotate true
+  max_size 100MB
+}
+
+# Environment-specific settings
+environment production
+backup_enabled true
+maintenance_mode false

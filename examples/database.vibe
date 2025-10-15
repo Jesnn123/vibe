@@ -28,26 +28,26 @@ primary {
 }
 
 # Read replicas
-replicas [
-  {
+replicas {
+  replica1 {
     host db-replica-1.internal
     port 5432
     lag_threshold 1000
     weight 1
   }
-  {
+  replica2 {
     host db-replica-2.internal
     port 5432
     lag_threshold 1000
     weight 1
   }
-  {
+  replica3 {
     host db-replica-3.internal
     port 5432
     lag_threshold 1000
     weight 2
   }
-]
+}
 
 # Backup configuration
 backup {
@@ -100,10 +100,10 @@ monitoring {
     enabled true
     export_interval 60
 
-    endpoints [
-      prometheus
-      datadog
-    ]
+    endpoints {
+      prometheus enabled
+      datadog enabled
+    }
   }
 
   alerts {
@@ -135,9 +135,9 @@ security {
 
   # Access control
   allowed_hosts [
-    10.0.0.0/8
-    172.16.0.0/12
-    192.168.0.0/16
+    "10.0.0.0/8"
+    "172.16.0.0/12"
+    "192.168.0.0/16"
   ]
 
   # Audit logging

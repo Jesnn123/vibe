@@ -2,29 +2,51 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -O2 -g
 LDFLAGS =
 
+# Targets
 TARGET = vibe_example
-SOURCES = vibe.c examples/example.c
-OBJECTS = vibe.o examples/example.o
+TEST_TARGET = vibe_test
+
+# Source files
+VIBE_SRC = vibe.c
+EXAMPLE_SRC = examples/example.c
+TEST_SRC = tests/test.c
+
+# Object files
+VIBE_OBJ = vibe.o
+EXAMPLE_OBJ = examples/example.o
+TEST_OBJ = tests/test.o
+
+# Headers
 HEADERS = vibe.h
 
-# Example files
+# Example VIBE files
 EXAMPLES = examples/simple.vibe examples/config.vibe examples/web_server.vibe examples/database.vibe
 
-.PHONY: all clean test run demo help install
+.PHONY: all clean test test-suite demo run help install
 
 all: $(TARGET)
 
-$(TARGET): vibe.o examples/example.o
+# Build example program
+$(TARGET): $(VIBE_OBJ) $(EXAMPLE_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^
 
-vibe.o: vibe.c $(HEADERS)
+# Build test suite
+$(TEST_TARGET): $(VIBE_OBJ) $(TEST_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $^
+
+# Object files
+vibe.o: $(VIBE_SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-examples/example.o: examples/example.c $(HEADERS)
-	$(CC) $(CFLAGS) -I. -c -o $@ $<
+examples/example.o: $(EXAMPLE_SRC) $(HEADERS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
+tests/test.o: $(TEST_SRC) $(HEADERS)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# Run example files
 test: $(TARGET)
-	@echo "=== Running VIBE Parser Tests ==="
+	@echo "=== Running Example File Tests ==="
 	@echo ""
 	@echo "Testing simple.vibe..."
 	@./$(TARGET) examples/simple.vibe || exit 1
@@ -38,7 +60,18 @@ test: $(TARGET)
 	@echo "Testing database.vibe..."
 	@./$(TARGET) examples/database.vibe || exit 1
 	@echo ""
-	@echo "✓ All tests passed!"
+	@echo "✓ All example tests passed!"
+
+# Run comprehensive test suite
+test-suite: $(TEST_TARGET)
+	@echo "=== Running Comprehensive Test Suite ==="
+	@echo ""
+	@./$(TEST_TARGET)
+
+# Run all tests
+test-all: test test-suite
+	@echo ""
+	@echo "✓ All tests completed successfully!"
 
 run: $(TARGET)
 	./$(TARGET) examples/simple.vibe
@@ -49,26 +82,33 @@ demo: all
 	@./$(TARGET) examples/simple.vibe
 
 clean:
-	rm -f $(OBJECTS) $(TARGET)
-	rm -f *.gcov *.gcda *.gcno
+	rm -f $(VIBE_OBJ) $(EXAMPLE_OBJ) $(TEST_OBJ)
 	rm -f examples/*.o
+	rm -f $(TARGET) $(TEST_TARGET)
+	rm -f *.gcov *.gcda *.gcno
+	rm -f libvibe.a
 
 help:
 	@echo "VIBE Parser Build System"
 	@echo ""
 	@echo "Targets:"
-	@echo "  all        Build the parser (default)"
-	@echo "  test       Run all example tests"
-	@echo "  demo       Run quick demo"
-	@echo "  run        Run with simple.vibe"
-	@echo "  clean      Remove build artifacts"
-	@echo "  install    Install to /usr/local (requires sudo)"
-	@echo "  help       Show this help message"
+	@echo "  all          Build the example program (default)"
+	@echo "  test         Run example file tests"
+	@echo "  test-suite   Run comprehensive test suite"
+	@echo "  test-all     Run all tests (examples + suite)"
+	@echo "  demo         Run quick demo"
+	@echo "  run          Run with simple.vibe"
+	@echo "  clean        Remove build artifacts"
+	@echo "  install      Install to /usr/local (requires sudo)"
+	@echo "  help         Show this help message"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make"
-	@echo "  make test"
+	@echo "  make                    # Build"
+	@echo "  make test               # Test with example files"
+	@echo "  make test-suite         # Run unit tests"
+	@echo "  make test-all           # Run all tests"
 	@echo "  ./vibe_example examples/config.vibe"
+	@echo "  ./vibe_test             # Run test suite directly"
 
 # Install to system (optional)
 install: all

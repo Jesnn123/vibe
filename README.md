@@ -66,41 +66,120 @@ make
 
 ### Basic Usage
 
+**Step 1:** Create a VIBE config file (`config.vibe`):
+
+```vibe
+# My application config
+application {
+  name "My Awesome App"
+  version 1.0
+  debug false
+}
+
+server {
+  host localhost
+  port 8080
+  
+  ssl {
+    enabled true
+    cert /etc/ssl/cert.pem
+  }
+}
+
+servers [
+  prod1.example.com
+  prod2.example.com
+  prod3.example.com
+]
+```
+
+**Step 2:** Parse and use it in C (`myapp.c`):
+
 ```c
 #include "vibe.h"
+#include <stdio.h>
 
 int main() {
+    // 1. Create parser
     VibeParser* parser = vibe_parser_new();
+    
+    // 2. Parse the config file
     VibeValue* config = vibe_parse_file(parser, "config.vibe");
-
+    
     if (!config) {
         VibeError error = vibe_get_last_error(parser);
-        fprintf(stderr, "Error: %s\n", error.message);
+        fprintf(stderr, "Error at line %d: %s\n", error.line, error.message);
+        vibe_parser_free(parser);
         return 1;
     }
-
-    // Access values with dot notation
+    
+    // 3. Access values using dot notation paths
+    //    Format: "object.nested_object.key"
     const char* name = vibe_get_string(config, "application.name");
     int64_t port = vibe_get_int(config, "server.port");
     bool debug = vibe_get_bool(config, "application.debug");
-
-    printf("App: %s, Port: %lld, Debug: %s\n",
-           name, port, debug ? "true" : "false");
-
+    bool ssl = vibe_get_bool(config, "server.ssl.enabled");
+    
+    printf("Application: %s\n", name ? name : "Unknown");
+    printf("Port: %lld\n", (long long)port);
+    printf("Debug mode: %s\n", debug ? "ON" : "OFF");
+    printf("SSL: %s\n", ssl ? "enabled" : "disabled");
+    
+    // 4. Access arrays
+    VibeArray* servers = vibe_get_array(config, "servers");
+    if (servers) {
+        printf("\nServers (%zu total):\n", servers->count);
+        for (size_t i = 0; i < servers->count; i++) {
+            VibeValue* server = servers->values[i];
+            if (server->type == VIBE_TYPE_STRING) {
+                printf("  %zu. %s\n", i + 1, server->as_string);
+            }
+        }
+    }
+    
+    // 5. Clean up (frees entire config tree)
     vibe_value_free(config);
     vibe_parser_free(parser);
+    
     return 0;
 }
 ```
 
-Compile and run:
+**Step 3:** Compile and run:
 
 ```bash
 gcc -o myapp myapp.c vibe.c -std=c11
 ./myapp
 ```
 
+**Output:**
+```
+Application: My Awesome App
+Port: 8080
+Debug mode: OFF
+SSL: enabled
+
+Servers (3 total):
+  1. prod1.example.com
+  2. prod2.example.com
+  3. prod3.example.com
+```
+
 ## 📚 Documentation
+
+### Full API Reference
+
+For complete API documentation with detailed examples, see **[docs/API.md](docs/API.md)**
+
+**Quick Links:**
+- [Parser Management](docs/API.md#parser-management) - Creating and managing parsers
+- [Parsing Functions](docs/API.md#parsing-functions) - Parse strings and files
+- [Value Access](docs/API.md#value-access) - Access values with dot notation
+- [Object Operations](docs/API.md#object-operations) - Working with objects
+- [Array Operations](docs/API.md#array-operations) - Working with arrays
+- [Memory Management](docs/API.md#memory-management) - Cleanup and freeing
+- [Error Handling](docs/API.md#error-handling) - Handling parse errors
+- [Complete Examples](docs/API.md#usage-examples) - Full working examples
 
 ### Syntax Overview
 
@@ -249,8 +328,10 @@ gcc -std=c11 -o myapp myapp.c vibe.o
 ## 📋 Examples
 
 Check out the `examples/` directory for more usage examples:
-- `simple.vibe` - Basic configuration
-- `config.vibe` - Complex nested structure
+- `simple.vibe` - Basic configuration with simple arrays
+- `config.vibe` - Complex nested structure using named objects
+- `web_server.vibe` - Web server configuration example
+- `database.vibe` - Database configuration with replicas
 - `example.c` - Complete C usage example
 
 ## 🤝 Contributing

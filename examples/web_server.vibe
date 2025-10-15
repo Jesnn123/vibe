@@ -29,8 +29,8 @@ server {
 }
 
 # Virtual hosts configuration
-vhosts [
-  {
+vhosts {
+  main {
     domain example.com
     root /var/www/example.com
     index index.html
@@ -38,7 +38,7 @@ vhosts [
     access_log /var/log/nginx/example.com.access.log
     error_log /var/log/nginx/example.com.error.log
   }
-  {
+  api {
     domain api.example.com
     root /var/www/api
     proxy_pass http://backend:3000
@@ -46,7 +46,7 @@ vhosts [
     access_log /var/log/nginx/api.access.log
     error_log /var/log/nginx/api.error.log
   }
-]
+}
 
 # Logging configuration
 logging {
@@ -71,18 +71,18 @@ logging {
 rate_limit {
   enabled true
 
-  rules [
-    {
+  rules {
+    api {
       path "/api/*"
       requests_per_second 100
       burst 20
     }
-    {
+    login {
       path "/login"
       requests_per_second 5
       burst 2
     }
-  ]
+  }
 }
 
 # CORS settings
@@ -115,20 +115,20 @@ cache {
   enabled true
   max_age 3600
 
-  rules [
-    {
+  rules {
+    css {
       pattern "*.css"
       max_age 86400
     }
-    {
+    javascript {
       pattern "*.js"
       max_age 86400
     }
-    {
+    images {
       pattern "*.jpg"
       max_age 604800
     }
-  ]
+  }
 }
 
 # Health check endpoint

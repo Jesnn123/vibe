@@ -60,6 +60,7 @@ static void set_error(VibeParser* parser, const char* fmt, ...);
 static bool is_identifier_start(char c);
 static bool is_identifier_char(char c);
 static bool is_unquoted_string_char(char c);
+static bool is_valid_number(const char* str);
 static char* strdup_range(const char* start, const char* end);
 static void skip_whitespace(VibeParser* parser);
 static void skip_comment(VibeParser* parser);
@@ -127,7 +128,46 @@ static bool is_identifier_char(char c) {
 }
 
 static bool is_unquoted_string_char(char c) {
-    return isalnum(c) || c == '_' || c == '-' || c == '.' || c == '/' || c == ':';
+    /* Allow all non-whitespace ASCII characters except structural characters */
+    if (c < 0x21 || c > 0x7E) return false;  /* Must be printable ASCII */
+    if (c == '{' || c == '}' || c == '[' || c == ']' || c == '#') return false;  /* Structural chars */
+    return true;
+}
+
+/* ===== Number Validation ===== */
+
+static bool is_valid_number(const char* str) {
+    if (!str || *str == '\0') return false;
+    
+    const char* p = str;
+    
+    /* Skip optional negative sign */
+    if (*p == '-') p++;
+    
+    /* Must have at least one digit */
+    if (!isdigit(*p)) return false;
+    
+    /* Count digits and dots */
+    bool has_dot = false;
+    bool has_digit_after_dot = false;
+    
+    while (*p) {
+        if (isdigit(*p)) {
+            if (has_dot) has_digit_after_dot = true;
+            p++;
+        } else if (*p == '.') {
+            if (has_dot) return false;  /* Multiple dots = not a number */
+            has_dot = true;
+            p++;
+        } else {
+            return false;  /* Non-numeric character */
+        }
+    }
+    
+    /* If there's a dot, there must be digits after it */
+    if (has_dot && !has_digit_after_dot) return false;
+    
+    return true;
 }
 
 /* ===== String Utilities ===== */
@@ -305,11 +345,8 @@ static Token next_token(VibeParser* parser) {
         /* Determine token type */
         if (strcmp(token.value, "true") == 0 || strcmp(token.value, "false") == 0) {
             token.type = TOKEN_BOOLEAN;
-        } else if (strpbrk(token.value, "0123456789") == token.value || 
-                   (token.value[0] == '-' && strpbrk(token.value + 1, "0123456789") == token.value + 1)) {
-            /* Check if it's a number */
-            bool is_float = strchr(token.value, '.') != NULL;
-            token.type = is_float ? TOKEN_NUMBER : TOKEN_NUMBER;
+        } else if (is_valid_number(token.value)) {
+            token.type = TOKEN_NUMBER;
         } else if (is_identifier_start(token.value[0])) {
             token.type = TOKEN_IDENTIFIER;
         } else {
@@ -642,10 +679,32 @@ VibeValue* vibe_parse_string(VibeParser* parser, const char* input) {
                     stack.depth--;
                 }
                 token_free(&token);
+            } else if (token.type == TOKEN_LEFT_BRACE) {
+                /* Object within array */
+                VibeValue* obj = vibe_value_new_object();
+                vibe_array_push(frame->container->as_array, obj);
+                
+                if (stack.depth < MAX_NESTING_DEPTH - 1) {
+                    stack.depth++;
+                    stack.frames[stack.depth].state = STATE_OBJECT;
+                    stack.frames[stack.depth].container = obj;
+                    stack.frames[stack.depth].current_key = NULL;
+                }
+                token_free(&token);
             } else {
-                VibeValue* val = parse_value_from_token(&token);
-                if (val) {
-                    vibe_array_push(frame->container->as_array, val);
+                /* Parse value - this could be a simple value or start of an object */
+                if (token.type == TOKEN_IDENTIFIER) {
+                    /* This might be a key in an object within the array */
+                    /* For now, treat as regular value - objects in arrays need parser rewrite */
+                    VibeValue* val = parse_value_from_token(&token);
+                    if (val) {
+                        vibe_array_push(frame->container->as_array, val);
+                    }
+                } else {
+                    VibeValue* val = parse_value_from_token(&token);
+                    if (val) {
+                        vibe_array_push(frame->container->as_array, val);
+                    }
                 }
                 token_free(&token);
             }

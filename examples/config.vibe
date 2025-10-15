@@ -1,61 +1,528 @@
-# Sample VIBE configuration file
-# This demonstrates the basic features of the VIBE format
+# Complex VIBE Configuration Example
+# This file demonstrates advanced VIBE features and real-world usage patterns
 
+# Application metadata
 application {
-  name "My Application"
-  version 1.0
-  debug false
+  name "Enterprise Web Application"
+  version 2.3.1
+  build_number 1247
+  release_date "2024-01-15"
   environment production
+
+  # Feature flags
+  features {
+    new_ui true
+    beta_api false
+    analytics true
+    rate_limiting true
+    caching true
+  }
+
+  # Application limits
+  limits {
+    max_users 10000
+    max_requests_per_second 1000
+    max_file_size 50MB
+    session_timeout 3600
+  }
 }
 
-server {
-  host localhost
-  port 8080
+# Database configuration with multiple connections
+database {
+  # Primary database
+  primary {
+    host db-primary.example.com
+    port 5432
+    name production_db
+    username app_user
+    password_file /secrets/db_password
 
+    # Connection pool settings
+    pool {
+      min_connections 5
+      max_connections 20
+      idle_timeout 300
+      max_lifetime 1800
+    }
+
+    # SSL configuration
+    ssl {
+      enabled true
+      mode require
+      cert_file /etc/ssl/certs/db.crt
+      key_file /etc/ssl/private/db.key
+    }
+  }
+
+  # Read replicas
+  replicas {
+    replica1 {
+      host db-replica-1.example.com
+      port 5432
+      weight 1.0
+    }
+    replica2 {
+      host db-replica-2.example.com
+      port 5432
+      weight 1.0
+    }
+    replica3 {
+      host db-replica-3.example.com
+      port 5432
+      weight 0.5
+    }
+  }
+
+  # Caching layer
+  cache {
+    type redis
+    host cache.example.com
+    port 6379
+    database 0
+    password_file /secrets/redis_password
+
+    # Cache settings
+    default_ttl 3600
+    max_memory 2GB
+    eviction_policy allkeys-lru
+  }
+}
+
+# Web server configuration
+server {
+  # Basic settings
+  bind_address 0.0.0.0
+  port 8080
+  worker_processes auto
+  worker_connections 1024
+
+  # Timeouts
+  timeouts {
+    client_header 60
+    client_body 60
+    send_timeout 60
+    keepalive_timeout 65
+    proxy_timeout 120
+  }
+
+  # SSL/TLS configuration
   ssl {
     enabled true
-    cert_path /etc/ssl/cert.pem
-    key_path /etc/ssl/key.pem
-  }
+    port 8443
 
-  timeouts {
-    read 30
-    write 30
-    idle 120
+    # Certificates
+    certificates {
+      primary {
+        domain example.com
+        cert_file /etc/ssl/certs/example.com.crt
+        key_file /etc/ssl/private/example.com.key
+      }
+      api {
+        domain api.example.com
+        cert_file /etc/ssl/certs/api.example.com.crt
+        key_file /etc/ssl/private/api.example.com.key
+      }
+    }
+
+    # Security settings
+    protocols [TLSv1.2 TLSv1.3]
+    ciphers "ECDHE+AESGCM:ECDHE+CHACHA20:DHE+AESGCM:DHE+CHACHA20:!aNULL:!MD5:!DSS"
+    prefer_server_ciphers true
+    session_cache shared:SSL:10m
+    session_timeout 1d
+
+    # HSTS
+    hsts {
+      enabled true
+      max_age 31536000
+      include_subdomains true
+      preload true
+    }
   }
 }
 
-database {
-  driver postgresql
-  host db.example.com
-  port 5432
-  name myapp_db
-  username db_user
+# Logging configuration
+logging {
+  # Global log level
+  level info
 
-  pool {
-    min_connections 5
-    max_connections 20
-    idle_timeout 300
+  # Output formats
+  format json
+  timestamp_format "2006-01-02T15:04:05.000Z07:00"
+
+  # Log destinations
+  outputs {
+    file {
+      type file
+      path /var/log/app/application.log
+      max_size 100MB
+      max_files 10
+      compress true
+    }
+    syslog {
+      type syslog
+      facility local0
+      tag myapp
+    }
+    elasticsearch {
+      type elasticsearch
+      hosts [
+        "http://log-1.example.com:9200"
+        "http://log-2.example.com:9200"
+      ]
+      index myapp-logs
+      template myapp-template
+    }
+  }
+
+  # Component-specific logging
+  components {
+    database debug
+    cache info
+    auth warn
+    api info
+    background_jobs debug
   }
 }
 
-# List of server addresses
-servers [
-  prod1.example.com
-  prod2.example.com
-  prod3.example.com
-]
+# Authentication and authorization
+auth {
+  # Session management
+  sessions {
+    store redis
+    secret_key_file /secrets/session_key
+    ttl 86400
+    secure true
+    same_site strict
+  }
 
-# Feature flags
-features {
-  new_ui true
-  beta_api false
-  analytics true
+  # OAuth providers
+  oauth {
+    google {
+      enabled true
+      client_id_file /secrets/google_client_id
+      client_secret_file /secrets/google_client_secret
+      scopes [email profile]
+    }
+
+    github {
+      enabled true
+      client_id_file /secrets/github_client_id
+      client_secret_file /secrets/github_client_secret
+      scopes [user:email]
+    }
+  }
+
+  # JWT configuration
+  jwt {
+    secret_file /secrets/jwt_secret
+    issuer "myapp.example.com"
+    expiry 3600
+    refresh_expiry 86400
+  }
+
+  # Password policy
+  password_policy {
+    min_length 8
+    require_uppercase true
+    require_lowercase true
+    require_numbers true
+    require_symbols true
+    max_age 90
+    history_size 5
+  }
 }
 
-# Simple array values
-ports [8080 8081 8082]
-environments [development staging production]
+# API configuration
+api {
+  # Versioning
+  version v2
+  base_path "/api"
 
-# Mixed types in arrays
-mixed_array [42 "hello" true 3.14]
+  # Rate limiting
+  rate_limit {
+    enabled true
+
+    # Global limits
+    global {
+      requests_per_minute 1000
+      burst 100
+    }
+
+    # Per-user limits
+    per_user {
+      requests_per_minute 100
+      burst 20
+    }
+
+    # Per-endpoint limits
+    endpoints {
+      login {
+        path "/api/auth/login"
+        requests_per_minute 5
+        burst 2
+      }
+      export {
+        path "/api/data/export"
+        requests_per_minute 2
+        burst 1
+      }
+    }
+  }
+
+  # CORS settings
+  cors {
+    enabled true
+    allowed_origins [
+      "https://app.example.com"
+      "https://admin.example.com"
+    ]
+    allowed_methods [GET POST PUT DELETE OPTIONS]
+    allowed_headers [
+      Authorization
+      Content-Type
+      X-Requested-With
+      X-API-Key
+    ]
+    expose_headers [X-Total-Count X-Page-Count]
+    max_age 86400
+    credentials true
+  }
+
+  # Documentation
+  docs {
+    enabled true
+    path "/api/docs"
+    title "My Application API"
+    version 2.3.1
+    contact {
+      name "API Support"
+      email "api-support@example.com"
+      url "https://support.example.com"
+    }
+  }
+}
+
+# Monitoring and metrics
+monitoring {
+  # Health checks
+  health {
+    enabled true
+    path "/health"
+    interval 30
+    timeout 5
+
+    # Health check definitions
+    checks {
+      database {
+        name database
+        type tcp
+        address db-primary.example.com:5432
+        timeout 5
+      }
+      cache {
+        name cache
+        type tcp
+        address cache.example.com:6379
+        timeout 3
+      }
+      disk_space {
+        name disk_space
+        type disk
+        path /var/lib/app
+        threshold 90
+      }
+    }
+  }
+
+  # Metrics collection
+  metrics {
+    enabled true
+
+    # Prometheus integration
+    prometheus {
+      enabled true
+      path "/metrics"
+      namespace myapp
+    }
+
+    # StatsD integration
+    statsd {
+      enabled true
+      host metrics.example.com
+      port 8125
+      prefix myapp
+    }
+  }
+
+  # Alerting
+  alerts {
+    enabled true
+
+    # Webhook notifications
+    webhooks {
+      slack {
+        name slack
+        url "https://hooks.slack.com/services/XXX/YYY/ZZZ"
+        events [error critical]
+      }
+      pagerduty {
+        name pagerduty
+        url "https://events.pagerduty.com/integration/XXX/enqueue"
+        events [critical]
+      }
+    }
+
+    # Email notifications
+    email {
+      enabled true
+      smtp_host smtp.example.com
+      smtp_port 587
+      from "alerts@example.com"
+      to ["ops-team@example.com" "sre-team@example.com"]
+    }
+  }
+}
+
+# Background job processing
+jobs {
+  # Queue configuration
+  queue {
+    type redis
+    host cache.example.com
+    port 6379
+    database 1
+
+    # Worker settings
+    workers 4
+    concurrency 10
+    timeout 300
+    retry_attempts 3
+    retry_delay 60
+  }
+
+  # Scheduled jobs
+  scheduled {
+    cleanup_logs {
+      name cleanup_logs
+      schedule "0 2 * * *"
+      command cleanup_old_logs
+      timeout 1800
+    }
+    backup_database {
+      name backup_database
+      schedule "0 1 * * *"
+      command backup_db
+      timeout 3600
+    }
+    send_reports {
+      name send_reports
+      schedule "0 9 * * 1"
+      command generate_weekly_reports
+      timeout 900
+    }
+  }
+}
+
+# External services
+external_services {
+  # Email service
+  email {
+    provider sendgrid
+    api_key_file /secrets/sendgrid_api_key
+    from_address "noreply@example.com"
+    from_name "My Application"
+
+    # Templates
+    templates {
+      welcome_email template_123
+      password_reset template_456
+      notification template_789
+    }
+  }
+
+  # File storage
+  storage {
+    provider s3
+    bucket myapp-production
+    region us-west-2
+    access_key_file /secrets/s3_access_key
+    secret_key_file /secrets/s3_secret_key
+
+    # CDN configuration
+    cdn {
+      enabled true
+      domain "assets.example.com"
+      cache_control "public, max-age=31536000"
+    }
+  }
+
+  # Search engine
+  search {
+    provider elasticsearch
+    hosts [
+      "https://search-1.example.com:9200"
+      "https://search-2.example.com:9200"
+    ]
+    index myapp-search
+
+    # Authentication
+    username elastic
+    password_file /secrets/elastic_password
+  }
+}
+
+# Development and testing
+development {
+  # Debug settings
+  debug {
+    enabled false
+    profiling false
+    query_logging false
+    template_debugging false
+  }
+
+  # Testing configuration
+  testing {
+    database_url "postgresql://test:test@localhost:5433/myapp_test"
+    redis_url "redis://localhost:6380/0"
+
+    # Test data
+    fixtures_path /app/tests/fixtures
+    seed_data true
+    parallel_tests true
+  }
+}
+
+# Security settings
+security {
+  # Content Security Policy
+  csp {
+    enabled true
+    default_src "'self'"
+    script_src "'self' 'unsafe-inline' cdn.example.com"
+    style_src "'self' 'unsafe-inline' fonts.googleapis.com"
+    img_src "'self' data: images.example.com"
+    font_src "'self' fonts.gstatic.com"
+    connect_src "'self' api.example.com"
+  }
+
+  # Request size limits
+  limits {
+    max_request_size 10MB
+    max_header_size 8KB
+    max_query_params 100
+  }
+
+  # IP filtering
+  ip_filter {
+    enabled false
+    whitelist [
+      "192.168.1.0/24"
+      "10.0.0.0/8"
+    ]
+    blacklist [
+      192.168.1.100
+    ]
+  }
+}
