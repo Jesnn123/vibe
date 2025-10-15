@@ -68,6 +68,8 @@ make
 
 VIBE includes a powerful **interactive parsing tool** with a beautiful TUI (Terminal User Interface) that visualizes the parsing process step-by-step:
 
+![VIBE Parser Tool Screenshot](docs/parser_tool_ss.png)
+
 ```bash
 make parser_tool
 ./vibe_parser_tool examples/simple.vibe
@@ -109,7 +111,7 @@ application {
 server {
   host localhost
   port 8080
-  
+
   ssl {
     enabled true
     cert /etc/ssl/cert.pem
@@ -132,29 +134,29 @@ servers [
 int main() {
     // 1. Create parser
     VibeParser* parser = vibe_parser_new();
-    
+
     // 2. Parse the config file
     VibeValue* config = vibe_parse_file(parser, "config.vibe");
-    
+
     if (!config) {
         VibeError error = vibe_get_last_error(parser);
         fprintf(stderr, "Error at line %d: %s\n", error.line, error.message);
         vibe_parser_free(parser);
         return 1;
     }
-    
+
     // 3. Access values using dot notation paths
     //    Format: "object.nested_object.key"
     const char* name = vibe_get_string(config, "application.name");
     int64_t port = vibe_get_int(config, "server.port");
     bool debug = vibe_get_bool(config, "application.debug");
     bool ssl = vibe_get_bool(config, "server.ssl.enabled");
-    
+
     printf("Application: %s\n", name ? name : "Unknown");
     printf("Port: %lld\n", (long long)port);
     printf("Debug mode: %s\n", debug ? "ON" : "OFF");
     printf("SSL: %s\n", ssl ? "enabled" : "disabled");
-    
+
     // 4. Access arrays
     VibeArray* servers = vibe_get_array(config, "servers");
     if (servers) {
@@ -166,11 +168,11 @@ int main() {
             }
         }
     }
-    
+
     // 5. Clean up (frees entire config tree)
     vibe_value_free(config);
     vibe_parser_free(parser);
-    
+
     return 0;
 }
 ```
