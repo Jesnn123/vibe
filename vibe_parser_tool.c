@@ -103,18 +103,18 @@ typedef struct {
     bool satisfied;           // Did we pass?
 } SpecCheck;
 
-// Ridiculous limits because we're using static arrays for simplicity
+// Reasonable limits for dynamic arrays - should be plenty for typical configs
 // In reality you'll never hit these - most configs have < 100 tokens
-#define MAX_API_LOGS    900000
-#define MAX_TOKENS      900000
+#define MAX_API_LOGS    10000
+#define MAX_TOKENS      10000
 #define MAX_SPEC_CHECKS 200
 
-// Global logs - yes, global state, but this is a demo tool not production code
-APICallLog api_logs[MAX_API_LOGS];
+// Global logs - dynamically allocated to avoid alignment issues on macOS
+APICallLog *api_logs = NULL;
 int api_log_count = 0;
-TokenInfo tokens[MAX_TOKENS];
+TokenInfo *tokens = NULL;
 int token_count = 0;
-SpecCheck spec_checks[MAX_SPEC_CHECKS];
+SpecCheck *spec_checks = NULL;
 int spec_check_count = 0;
 
 // History for the rewind feature - we save state before each step
@@ -127,7 +127,7 @@ typedef struct {
     int api_log_count;     // How many API calls had we made?
 } ParserState;
 
-ParserState state_history[MAX_HISTORY];
+ParserState *state_history = NULL;
 int history_count = 0;
 
 // Terminal resize optimization - only redraw if size actually changed
@@ -443,11 +443,29 @@ void update_config_panel(DashboardPanel *panel, int current_line) {
 
     // Calculate nesting depth and build breadcrumb
     int depth = 0;
-    char breadcrumb_parts[32][32];  // Stack of path parts
+    // Use heap allocation to avoid stack alignment issues on macOS
+    char **breadcrumb_parts = malloc(32 * sizeof(char*));
+    if (!breadcrumb_parts) {
+        wrefresh(panel->win);
+        return;
+    }
+    for (int i = 0; i < 32; i++) {
+        breadcrumb_parts[i] = malloc(32);
+        if (!breadcrumb_parts[i]) {
+            for (int j = 0; j < i; j++) free(breadcrumb_parts[j]);
+            free(breadcrumb_parts);
+            wrefresh(panel->win);
+            return;
+        }
+    }
+    
     int breadcrumb_count = 0;
-    strcpy(breadcrumb_parts[breadcrumb_count++], "root");
+    strncpy(breadcrumb_parts[breadcrumb_count], "root", 31);
+    breadcrumb_parts[breadcrumb_count][31] = '\0';
+    breadcrumb_count++;
 
     for (int i = 0; i <= current_line && i < config_line_count; i++) {
+        if (!config_lines || !config_lines[i]) continue;
         if (config_lines[i]) {
             if (strchr(config_lines[i], '{')) {
                 depth++;
@@ -459,7 +477,9 @@ void update_config_panel(DashboardPanel *panel, int current_line) {
                         breadcrumb_parts[breadcrumb_count][len] = '\0';
                         breadcrumb_count++;
                     } else {
-                        strcpy(breadcrumb_parts[breadcrumb_count++], "obj");
+                        strncpy(breadcrumb_parts[breadcrumb_count], "obj", 31);
+                        breadcrumb_parts[breadcrumb_count][31] = '\0';
+                        breadcrumb_count++;
                     }
                 }
             }
@@ -473,18 +493,33 @@ void update_config_panel(DashboardPanel *panel, int current_line) {
     }
     if (depth < 0) depth = 0;
 
-    // Build breadcrumb string from parts
+    // Build breadcrumb string from parts (safely)
     char breadcrumb[256] = "";
-    for (int i = 0; i < breadcrumb_count; i++) {
-        if (i > 0) strcat(breadcrumb, " > ");
-        strcat(breadcrumb, breadcrumb_parts[i]);
+    size_t breadcrumb_len = 0;
+    for (int i = 0; i < breadcrumb_count && breadcrumb_len < 250; i++) {
+        if (i > 0 && breadcrumb_len < 247) {
+            strncat(breadcrumb, " > ", 255 - breadcrumb_len);
+            breadcrumb_len += 3;
+        }
+        size_t part_len = strlen(breadcrumb_parts[i]);
+        if (breadcrumb_len + part_len < 255) {
+            strncat(breadcrumb, breadcrumb_parts[i], 255 - breadcrumb_len);
+            breadcrumb_len += part_len;
+        }
     }
+    breadcrumb[255] = '\0';
+    
+    // Free heap-allocated breadcrumb parts
+    for (int i = 0; i < 32; i++) {
+        free(breadcrumb_parts[i]);
+    }
+    free(breadcrumb_parts);
 
     // Analyze current line type
     char *curr_line_text = "";
     const char *line_type = "Empty";
     const char *line_icon = " ";
-    if (current_line < config_line_count && config_lines[current_line]) {
+    if (config_lines && current_line >= 0 && current_line < config_line_count && config_lines[current_line]) {
         curr_line_text = config_lines[current_line];
         char *trimmed = curr_line_text;
         while (*trimmed == ' ' || *trimmed == '\t') trimmed++;
@@ -620,11 +655,11 @@ void update_config_panel(DashboardPanel *panel, int current_line) {
     }
 
     for (int i = start_line; i < config_line_count && y < max_y - 1; i++) {
-        if (!config_lines[i]) continue;
+        if (!config_lines || i < 0 || i >= config_line_count || !config_lines[i]) continue;
 
         char *line = config_lines[i];
         int indent = 0;
-        while (line[indent] == ' ' || line[indent] == '\t') indent++;
+        while (line[indent] && (line[indent] == ' ' || line[indent] == '\t')) indent++;
         if (line[indent] == '\t') indent *= 2;
 
         if (i == current_line) {
@@ -656,7 +691,7 @@ void update_config_panel(DashboardPanel *panel, int current_line) {
 
             // Content with yellow background
             char *trimmed = line;
-            while (*trimmed == ' ' || *trimmed == '\t') trimmed++;
+            while (*trimmed && (*trimmed == ' ' || *trimmed == '\t')) trimmed++;
 
             // Display with full yellow background
             wattron(panel->win, COLOR_PAIR(COLOR_CURRENT_LINE) | A_REVERSE | A_BOLD);
@@ -665,7 +700,8 @@ void update_config_panel(DashboardPanel *panel, int current_line) {
             for (int j = 0; j < indent; j++) wprintw(panel->win, " ");
 
             if (trimmed[0] == '#') {
-                wprintw(panel->win, "# %s", trimmed + 1);
+                wprintw(panel->win, "#%s", trimmed[1] ? " " : "");
+                if (trimmed[1]) wprintw(panel->win, "%s", trimmed + 1);
             } else if (strchr(trimmed, '{') || strchr(trimmed, '}')) {
                 wprintw(panel->win, "%s", trimmed);
             } else if (strchr(trimmed, '[') || strchr(trimmed, ']')) {
@@ -673,8 +709,9 @@ void update_config_panel(DashboardPanel *panel, int current_line) {
             } else {
                 char *space = strchr(trimmed, ' ');
                 if (space) {
-                    char key[256] = {0};
-                    strncpy(key, trimmed, space - trimmed);
+                    char key[128] = {0};
+                    strncpy(key, trimmed, space - trimmed < 127 ? space - trimmed : 127);
+                    key[127] = '\0';
                     wprintw(panel->win, "%s  %s", key, space + 1);
                 } else {
                     wprintw(panel->win, "%s", trimmed);
@@ -765,7 +802,7 @@ void update_config_panel(DashboardPanel *panel, int current_line) {
 
             // Line content with syntax highlighting
             char *trimmed = line;
-            while (*trimmed == ' ' || *trimmed == '\t') trimmed++;
+            while (*trimmed && (*trimmed == ' ' || *trimmed == '\t')) trimmed++;
 
             if (strlen(trimmed) == 0) {
                 // Empty line
@@ -778,7 +815,8 @@ void update_config_panel(DashboardPanel *panel, int current_line) {
                                 is_close ? COLOR_PAIR(COLOR_COMMENT) :
                                 (COLOR_PAIR(COLOR_COMMENT) | A_DIM);
                 wattron(panel->win, color_attr);
-                wprintw(panel->win, "# %s", trimmed + 1);
+                wprintw(panel->win, "#");
+                if (trimmed[1]) wprintw(panel->win, " %s", trimmed + 1);
                 wattroff(panel->win, color_attr);
             } else if (strchr(trimmed, '{')) {
                 // Object start
@@ -808,8 +846,10 @@ void update_config_panel(DashboardPanel *panel, int current_line) {
                 // Key-value pair
                 char *space = strchr(trimmed, ' ');
                 if (space) {
-                    char key[256] = {0};
-                    strncpy(key, trimmed, space - trimmed);
+                    char key[128] = {0};
+                    size_t key_len = space - trimmed < 127 ? space - trimmed : 127;
+                    strncpy(key, trimmed, key_len);
+                    key[127] = '\0';
 
                     int key_attr = is_very_close ? (COLOR_PAIR(COLOR_KEY) | A_BOLD) :
                                   is_close ? COLOR_PAIR(COLOR_KEY) :
@@ -1698,7 +1738,9 @@ void render_value_tree(WINDOW *win, VibeValue *value, int *y, int x, int max_y, 
 
     char indent_str[128] = "";
     for (int i = 0; i < indent && i < 30; i++) {
-        strcat(indent_str, "  ");
+        if (strlen(indent_str) + 2 < sizeof(indent_str) - 1) {
+            strncat(indent_str, "  ", sizeof(indent_str) - strlen(indent_str) - 1);
+        }
     }
 
     switch (value->type) {
@@ -2284,37 +2326,48 @@ void update_help_panel(DashboardPanel *panel) {
 
 void add_api_log(const char *operation, const char *api_function, const char *params,
                  const char *result, const char *explanation) {
-    if (api_log_count < MAX_API_LOGS) {
-        strncpy(api_logs[api_log_count].operation, operation, 255);
-        strncpy(api_logs[api_log_count].api_function, api_function, 127);
-        strncpy(api_logs[api_log_count].parameters, params, 255);
-        strncpy(api_logs[api_log_count].result, result, 255);
-        strncpy(api_logs[api_log_count].explanation, explanation, 255);
-        api_logs[api_log_count].timestamp = api_log_count;
-        api_log_count++;
-    }
+    if (!api_logs || api_log_count >= MAX_API_LOGS) return;
+    
+    strncpy(api_logs[api_log_count].operation, operation, 255);
+    api_logs[api_log_count].operation[255] = '\0';
+    strncpy(api_logs[api_log_count].api_function, api_function, 127);
+    api_logs[api_log_count].api_function[127] = '\0';
+    strncpy(api_logs[api_log_count].parameters, params, 255);
+    api_logs[api_log_count].parameters[255] = '\0';
+    strncpy(api_logs[api_log_count].result, result, 255);
+    api_logs[api_log_count].result[255] = '\0';
+    strncpy(api_logs[api_log_count].explanation, explanation, 255);
+    api_logs[api_log_count].explanation[255] = '\0';
+    api_logs[api_log_count].timestamp = api_log_count;
+    api_log_count++;
 }
 
-void add_token(const char *type, const char *value, int line, int col,
+void add_token(const char *token_type, const char *token_value, int line, int column,
                const char *context, const char *spec_ref) {
-    if (token_count < MAX_TOKENS) {
-        strncpy(tokens[token_count].token_type, type, 63);
-        strncpy(tokens[token_count].token_value, value, 255);
-        tokens[token_count].line = line;
-        tokens[token_count].column = col;
-        strncpy(tokens[token_count].context, context, 127);
-        strncpy(tokens[token_count].spec_reference, spec_ref, 127);
-        token_count++;
-    }
+    if (!tokens || token_count >= MAX_TOKENS) return;
+    
+    strncpy(tokens[token_count].token_type, token_type, 63);
+    tokens[token_count].token_type[63] = '\0';
+    strncpy(tokens[token_count].token_value, token_value, 255);
+    tokens[token_count].token_value[255] = '\0';
+    tokens[token_count].line = line;
+    tokens[token_count].column = column;
+    strncpy(tokens[token_count].context, context, 127);
+    tokens[token_count].context[127] = '\0';
+    strncpy(tokens[token_count].spec_reference, spec_ref, 127);
+    tokens[token_count].spec_reference[127] = '\0';
+    token_count++;
 }
 
 void add_spec_check(const char *rule, const char *description, bool satisfied) {
-    if (spec_check_count < MAX_SPEC_CHECKS) {
-        strncpy(spec_checks[spec_check_count].rule, rule, 127);
-        strncpy(spec_checks[spec_check_count].description, description, 255);
-        spec_checks[spec_check_count].satisfied = satisfied;
-        spec_check_count++;
-    }
+    if (!spec_checks || spec_check_count >= MAX_SPEC_CHECKS) return;
+    
+    strncpy(spec_checks[spec_check_count].rule, rule, 127);
+    spec_checks[spec_check_count].rule[127] = '\0';
+    strncpy(spec_checks[spec_check_count].description, description, 255);
+    spec_checks[spec_check_count].description[255] = '\0';
+    spec_checks[spec_check_count].satisfied = satisfied;
+    spec_check_count++;
 }
 
 void load_config_file(const char *filename) {
@@ -2328,13 +2381,25 @@ void load_config_file(const char *filename) {
         config_line_count++;
     }
 
+    if (config_line_count == 0) {
+        fclose(f);
+        return;
+    }
+
     config_lines = malloc(sizeof(char*) * config_line_count);
+    if (!config_lines) {
+        fclose(f);
+        return;
+    }
 
     rewind(f);
     int i = 0;
     while (fgets(line, sizeof(line), f) && i < config_line_count) {
         line[strcspn(line, "\n")] = 0;
         config_lines[i] = strdup(line);
+        if (!config_lines[i]) {
+            config_lines[i] = strdup("");  // Fallback to empty string
+        }
         i++;
     }
 
@@ -2342,29 +2407,57 @@ void load_config_file(const char *filename) {
 }
 
 void load_config_from_string(const char *content) {
-    if (!content) return;
+    if (!content || *content == '\0') return;
 
-    config_line_count = 1;
-    for (const char *p = content; *p; p++) {
-        if (*p == '\n') config_line_count++;
+    // Count lines
+    config_line_count = 0;
+    const char *p = content;
+    const char *line_start = content;
+    
+    while (*p) {
+        if (*p == '\n') {
+            config_line_count++;
+            line_start = p + 1;
+        }
+        p++;
     }
+    // Count last line if it doesn't end with newline
+    if (line_start < p) {
+        config_line_count++;
+    }
+    
+    if (config_line_count == 0) return;
 
     config_lines = malloc(sizeof(char*) * config_line_count);
+    if (!config_lines) return;
 
+    // Parse lines
     int i = 0;
-    const char *line_start = content;
-    const char *p = content;
+    line_start = content;
+    p = content;
 
-    while (*p) {
-        if (*p == '\n' || *(p + 1) == '\0') {
-            size_t len = (*p == '\n') ? (p - line_start) : (p - line_start + 1);
+    while (*p && i < config_line_count) {
+        if (*p == '\n') {
+            size_t len = p - line_start;
             config_lines[i] = malloc(len + 1);
-            strncpy(config_lines[i], line_start, len);
-            config_lines[i][len] = '\0';
+            if (config_lines[i]) {
+                strncpy(config_lines[i], line_start, len);
+                config_lines[i][len] = '\0';
+            }
             i++;
             line_start = p + 1;
         }
         p++;
+    }
+    
+    // Handle last line if it doesn't end with newline
+    if (i < config_line_count && line_start < p) {
+        size_t len = p - line_start;
+        config_lines[i] = malloc(len + 1);
+        if (config_lines[i]) {
+            strncpy(config_lines[i], line_start, len);
+            config_lines[i][len] = '\0';
+        }
     }
 }
 
@@ -2377,6 +2470,10 @@ char* read_from_stdin(void) {
     size_t buffer_size = 4096;
     size_t current_size = 0;
     char *buffer = malloc(buffer_size);
+    if (!buffer) {
+        printf("✗ Memory allocation failed\n");
+        return NULL;
+    }
     char line[512];
 
     while (fgets(line, sizeof(line), stdin)) {
@@ -2384,11 +2481,19 @@ char* read_from_stdin(void) {
 
         if (current_size + line_len >= buffer_size) {
             buffer_size *= 2;
-            buffer = realloc(buffer, buffer_size);
+            char *new_buffer = realloc(buffer, buffer_size);
+            if (!new_buffer) {
+                free(buffer);
+                return NULL;
+            }
+            buffer = new_buffer;
         }
 
-        strcpy(buffer + current_size, line);
-        current_size += line_len;
+        if (current_size + line_len < buffer_size) {
+            strncpy(buffer + current_size, line, buffer_size - current_size - 1);
+            buffer[current_size + line_len] = '\0';
+            current_size += line_len;
+        }
     }
 
     buffer[current_size] = '\0';
@@ -2454,13 +2559,23 @@ char* receive_socket_data(int socket_fd) {
     size_t buffer_size = 4096;
     size_t current_size = 0;
     char *buffer = malloc(buffer_size);
+    if (!buffer) {
+        close(client_fd);
+        return NULL;
+    }
     char temp[1024];
     ssize_t bytes_read;
 
     while ((bytes_read = recv(client_fd, temp, sizeof(temp) - 1, 0)) > 0) {
         if (current_size + bytes_read >= buffer_size) {
             buffer_size *= 2;
-            buffer = realloc(buffer, buffer_size);
+            char *new_buffer = realloc(buffer, buffer_size);
+            if (!new_buffer) {
+                free(buffer);
+                close(client_fd);
+                return NULL;
+            }
+            buffer = new_buffer;
         }
 
         memcpy(buffer + current_size, temp, bytes_read);
@@ -2514,6 +2629,10 @@ char* read_paste_input(void) {
     size_t buffer_size = 4096;
     size_t current_size = 0;
     char *buffer = malloc(buffer_size);
+    if (!buffer) {
+        printf("✗ Memory allocation failed\n");
+        return NULL;
+    }
     char line[512];
 
     while (fgets(line, sizeof(line), stdin)) {
@@ -2525,11 +2644,19 @@ char* read_paste_input(void) {
 
         if (current_size + line_len >= buffer_size) {
             buffer_size *= 2;
-            buffer = realloc(buffer, buffer_size);
+            char *new_buffer = realloc(buffer, buffer_size);
+            if (!new_buffer) {
+                free(buffer);
+                return NULL;
+            }
+            buffer = new_buffer;
         }
 
-        strcpy(buffer + current_size, line);
-        current_size += line_len;
+        if (current_size + line_len < buffer_size) {
+            strncpy(buffer + current_size, line, buffer_size - current_size - 1);
+            buffer[current_size + line_len] = '\0';
+            current_size += line_len;
+        }
     }
 
     buffer[current_size] = '\0';
@@ -2574,6 +2701,11 @@ char* prompt_file_input(void) {
     fseek(f, 0, SEEK_SET);
 
     char *buffer = malloc(file_size + 1);
+    if (!buffer) {
+        fclose(f);
+        printf("✗ Memory allocation failed\n");
+        return NULL;
+    }
     size_t bytes_read = fread(buffer, 1, file_size, f);
     buffer[bytes_read] = '\0';
 
@@ -2599,26 +2731,25 @@ void show_input_menu(void) {
 // Save the current state before taking a parsing step
 // This lets us rewind later with the 'b' key
 void save_state(void) {
-    if (history_count < MAX_HISTORY) {
-        state_history[history_count].config_line = current_config_line;
-        state_history[history_count].step = current_step;
-        state_history[history_count].token_count = token_count;
-        state_history[history_count].api_log_count = api_log_count;
-        history_count++;
-    }
-    // If we hit MAX_HISTORY, oldest states get lost - acceptable tradeoff
+    if (!state_history || history_count >= MAX_HISTORY) return;
+    
+    state_history[history_count].config_line = current_config_line;
+    state_history[history_count].step = current_step;
+    state_history[history_count].token_count = token_count;
+    state_history[history_count].api_log_count = api_log_count;
+    history_count++;
 }
 
 // Go back one step - restore the previous state from history
 // Super useful for understanding what the parser just did
 void restore_previous_state(void) {
-    if (history_count > 0) {
-        history_count--;
-        current_config_line = state_history[history_count].config_line;
-        current_step = state_history[history_count].step;
-        token_count = state_history[history_count].token_count;
-        api_log_count = state_history[history_count].api_log_count;
-    }
+    if (!state_history || history_count == 0) return;
+    
+    history_count--;
+    current_config_line = state_history[history_count].config_line;
+    current_step = state_history[history_count].step;
+    token_count = state_history[history_count].token_count;
+    api_log_count = state_history[history_count].api_log_count;
 }
 
 // Simulate one step of parsing - process the current line
@@ -2668,8 +2799,11 @@ void simulate_parsing_step(VibeParser *parser, Dashboard *dash __attribute__((un
         if (space) {
             char key[128] = {0};
             char value[256] = {0};
-            strncpy(key, line, space - line);
-            strcpy(value, space + 1);
+            size_t key_len = space - line < 127 ? space - line : 127;
+            strncpy(key, line, key_len);
+            key[127] = '\0';
+            strncpy(value, space + 1, 255);
+            value[255] = '\0';
 
             char *v = value;
             while (*v == ' ') v++;
@@ -2712,6 +2846,17 @@ int main(int argc, char *argv[]) {
     char *config_content = NULL;
     char *temp_file = NULL;
     InputMethod input_method = INPUT_FILE;
+
+    // Allocate global arrays dynamically to avoid alignment issues
+    api_logs = calloc(MAX_API_LOGS, sizeof(APICallLog));
+    tokens = calloc(MAX_TOKENS, sizeof(TokenInfo));
+    spec_checks = calloc(MAX_SPEC_CHECKS, sizeof(SpecCheck));
+    state_history = calloc(MAX_HISTORY, sizeof(ParserState));
+    
+    if (!api_logs || !tokens || !spec_checks || !state_history) {
+        fprintf(stderr, "Error: Failed to allocate memory for global arrays\n");
+        return 1;
+    }
 
     start_time = time(NULL);
 
@@ -2849,18 +2994,34 @@ parse_config:
     }
 
     printf("\n✓ Loaded: %d lines\n", config_line_count);
-    printf("Press Enter to start...\n");
-    getchar();
-
+    
     total_steps = config_line_count;
     const char *config_file_path = temp_file ? temp_file : (argc >= 2 ? argv[1] : "memory");
 
-    // Initialize ncurses
+    // Parse the file BEFORE initializing ncurses to avoid conflicts
+    printf("Parsing configuration file...\n");
+    VibeParser *parser = vibe_parser_new();
+    if (!parser) {
+        fprintf(stderr, "Error: Failed to create parser\n");
+        return 1;
+    }
+    
+    VibeValue *root_value = vibe_parse_file(parser, config_file_path);
+    if (!root_value) {
+        fprintf(stderr, "Warning: Failed to parse file (will continue anyway)\n");
+    }
+    
+    printf("Press Enter to start...\n");
+    getchar();
+    
+    // Initialize ncurses AFTER parsing is complete
     initscr();
 
     // Check if initialization succeeded
     if (stdscr == NULL) {
         fprintf(stderr, "Error: Failed to initialize ncurses\n");
+        if (root_value) vibe_value_free(root_value);
+        vibe_parser_free(parser);
         return 1;
     }
     cbreak();
@@ -2873,15 +3034,12 @@ parse_config:
         init_colors();
     }
 
-    Dashboard dash;
+    // Zero-initialize to ensure all pointers are NULL
+    Dashboard dash = {0};
     init_dashboard(&dash);
-
-    VibeParser *parser = vibe_parser_new();
-    VibeValue *root_value = NULL;
 
     add_api_log("Init parser", "vibe_parser_new()", "", "VibeParser*",
                 "Creates new parser instance");
-    root_value = vibe_parse_file(parser, config_file_path);
     add_api_log("Parse file", "vibe_parse_file()", config_file_path,
                 root_value ? "SUCCESS" : "FAILED",
                 "Parses entire config file into data structure");
@@ -3084,6 +3242,12 @@ parse_config:
     if (config_content) {
         free(config_content);
     }
+
+    // Free dynamically allocated global arrays
+    free(api_logs);
+    free(tokens);
+    free(spec_checks);
+    free(state_history);
 
     endwin();
 
